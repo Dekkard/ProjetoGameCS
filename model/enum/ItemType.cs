@@ -177,7 +177,7 @@ public enum DrinkName
 }
 public enum PotionName
 {
-    Força, Percepção, Saúde, Carisma, Inteligência, Agilidade, Sorte,
+    Cura, Mana, Força, Percepção, Saúde, Carisma, Inteligência, Agilidade, Sorte,
 }
 public enum AmmunitionName
 {
@@ -225,7 +225,7 @@ public enum MaterialClothName
 }
 public enum QualityName
 {
-    Quebrado, Rachado, Pobre,  Péssimo, Ruim, Regular, Bom, Ótimo, Excelente, Perfeito,
+    Quebrado, Rachado, Pobre, Péssimo, Ruim, Regular, Bom, Ótimo, Excelente, Perfeito,
 }
 public enum RarityName
 {

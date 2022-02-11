@@ -76,20 +76,40 @@ public class SheetController
     {
         var db = new LiteDatabase("data.db");
         ILiteCollection<Hero> heros = db.GetCollection<Hero>(HERO);
+        Dictionary<int, Hero> heroDict = new Dictionary<int, Hero>();
         List<Hero> heroList = heros.Query().ToList();
         if (heroList.Count > 0)
         {
             while (true)
             {
+                int index = 0;
                 foreach (Hero h in heroList)
                 {
-                    Console.WriteLine(h.Id + ": " + h.Nome);
+                    Console.WriteLine(++index + ": " + h.Nome);
+                    try
+                    {
+                        heroDict.Add(index, h);
+                    }
+                    catch (System.ArgumentException) { }
                 }
                 Console.WriteLine("Selecione o personagem: ");
                 string opt = OptRead("Deve escolher um nome ou identifacação.");
+                Hero hero;
                 try
                 {
-                    Hero hero = heros.Query().Where(x => x.Id.Equals(int.Parse(opt)) || x.Nome.Equals(opt)).First();
+                    try
+                    {
+                        hero = heroDict[int.Parse(opt)];
+                    }
+                    catch (FormatException)
+                    {
+                        hero = heros.Query().Where(x => x.Nome.Equals(opt)).First();
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                        Console.WriteLine("Número não consta na lista.");
+                        continue;
+                    }
                     hero.inventory = new InventoryController(hero.Id);
                     db.Dispose();
                     return hero;
@@ -97,6 +117,7 @@ public class SheetController
                 catch (System.InvalidOperationException)
                 {
                     Console.WriteLine("Nome não consta na lista.");
+                    continue;
                 }
             }
         }

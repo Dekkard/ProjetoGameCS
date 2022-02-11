@@ -1,10 +1,12 @@
 #pragma warning disable 8600, 8602, 8603
 public static class BaseController
 {
+    public static string DATA = "data.db";
     public static string HERO = "hero";
     public static string INVENTORY = "inventory";
     public static string CITIES = "cities";
     public static string SERVICES = "services";
+    public static string WORKS = "works";
 
     public static string OptRead(string msg)
     {

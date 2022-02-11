@@ -29,7 +29,7 @@ public class City
         _id = ObjectId.NewObjectId().Increment % 10000; // atribuição de id;
         _heroId = heroId;
         _name = CityNameGenerator(); // Gerador de nomes para a cidade
-        _size = (CitySize)new Random().Next(Enum.GetValues(typeof(CitySize)).Length - 1); // Escolhand aletória de tamanho da cidade
+        _size = (CitySize)new Random().Next(Enum.GetValues(typeof(CitySize)).Length); // Escolhand aletória de tamanho da cidade
         _isCurrent = isCurrent; // Se a cidade é a qual o herói está atualmente
         _connections = new List<int>(); // Lista de conexões com outras cidades
     }
@@ -54,9 +54,9 @@ public class City
         string[] vowals = { "a", "e", "i", "o", "u" };// Lista de vogais
         string[] consoants = { "b", "c", "d", "f", "g", "h", "j", "l", "m", "n", "p", "q", "r", "s", "t", "v" };// Lista de consoantes comuns
         string[] c_inc = { "k", "w", "x", "y", "z" };//Lista de consoantes incomuns
-        int v_len = vowals.Length - 1;
-        int c_len = consoants.Length - 1;
-        int ci_len = c_inc.Length - 1;
+        int v_len = vowals.Length;
+        int c_len = consoants.Length;
+        int ci_len = c_inc.Length;
         Random rng = new Random();
         List<string> syllables = new List<string>();
         for (int i = 0; i < reptition; i++) // Definido por usuário, a quantidade de sílabas a serem criadas
@@ -91,7 +91,7 @@ public class City
         int totalServ = (int)_size;
         while (totalServ > 0)
         {
-            _services.Add((CityServices)rng.Next(Enum.GetValues(typeof(CityServices)).Length - 1));
+            _services.Add((CityServices)rng.Next(Enum.GetValues(typeof(CityServices)).Length));
             totalServ--;
         }
     }
@@ -102,7 +102,7 @@ public class City
         int totalWorks = (int)_size;
         while (totalWorks > 0)
         {
-            _works.Add((CityWorks)rng.Next(Enum.GetValues(typeof(CityWorks)).Length - 1));
+            _works.Add((CityWorks)rng.Next(Enum.GetValues(typeof(CityWorks)).Length));
             totalWorks--;
         }
     }
@@ -141,40 +141,30 @@ public class Services
         return "ID: " + _id + ", id Cidade: " + _cityId + ", " + _cityServices + ", " + _riches.ToString();
     }
 }
+public class Works
+{
+    private int _id;
+    private int _cityId;
+    private Value _workPay;
+    private CityWorks _cityWorks;
 
-public enum CityName1 // Primeiro conjunto de sílabas
-{
-    Vin, Vi, Lan, Ian, Ter, Tir, Tyr, Kra, Kar, Yha, Nin, Gno, Hu, Ret, Sal, Ghul, Gull, Yelo,
-}
-public enum CityName2 // Segundo conjunto de sílabas
-{
-    fil, phil, phill, rut, rutt, hut, hutt, ter, ol, oll, rum, hull, opt, op, who, xafe, kha
-}
-public enum CityName3 // Terceiro conjunto de sílabas
-{
-    sur, kril, krill, suros, um, ksi, kara, ygo, kji, who, yal, yala
-}
-public enum CityName4 // Último conjunto de sílabas
-{
-    ka, bo, tum, gum, olm, duo, li, ma, kle, de, ho, qo, gi, to, si, ne, vier, au, ag,
-}
-public enum CitySuffix // Sufixo para as cidades
-{
-    burg, town, _City,
-}
-public enum CitySize // Tamanho da cidade
-{
-    Burg, Town, City, Capital, Polis
-}
-public enum TamanhoCidade // Tamanho da cidade traduzido
-{
-    Burgo, Vila, Cidade, Capital, Polis
-}
-public enum CityWorks // Tipos de trabalho que pode ter em uma cidade
-{
-    Ferreiro, Alfaiate, Carregador,
-}
-public enum CityServices // Tipos de serviço que uma cidade pode oferer
-{
-    Estaleiro, Loja, Armeiro, Alquimista, Mercearia,
+    public int Id { get => _id; set => _id = value; }
+    public int CityId { get => _cityId; set => _cityId = value; }
+    public Value WorkPay { get => _workPay; set => _workPay = value; }
+    public CityWorks CityWorks { get => _cityWorks; set => _cityWorks = value; }
+
+    public Works() { _id = ObjectId.NewObjectId().Increment; }
+
+    public Works(int citId, Value workPay, CityWorks cityWorks)
+    {
+        _id = ObjectId.NewObjectId().Increment;
+        _cityId = citId;
+        _workPay = workPay;
+        _cityWorks = cityWorks;
+    }
+
+    public override string ToString()
+    {
+        return "ID: " + _id + ", id Cidade: " + _cityId + ", " + _cityWorks + ", " + _workPay.ToString();
+    }
 }

@@ -1,3 +1,5 @@
+using static BaseController;
+#pragma warning disable CS8602
 public class Equip
 {
     private int _idHero;
@@ -16,6 +18,8 @@ public class Equip
     private int _rightHand;
     private int _leftHand;
 
+    private Modifiers _equipMod;
+
     public int IdHero { get => _idHero; set => _idHero = value; }
     public int Head { get => _head; set => _head = value; }
     public int Body { get => _body; set => _body = value; }
@@ -31,13 +35,29 @@ public class Equip
     public int Neck { get => _neck; set => _neck = value; }
     public int RightHand { get => _rightHand; set => _rightHand = value; }
     public int LeftHand { get => _leftHand; set => _leftHand = value; }
+    public Modifiers EquipMod { get => _equipMod; set => _equipMod = value; }
 
     public Equip()
     {
-
+        _idHero = 0;
+        _head = 0;
+        _body = 0;
+        _shoulder = 0;
+        _wrist = 0;
+        _hand = 0;
+        _legs = 0;
+        _feet = 0;
+        _cape = 0;
+        _belt = 0;
+        _rightRing = 0;
+        _leftRing = 0;
+        _neck = 0;
+        _rightHand = 0;
+        _leftHand = 0;
+        _equipMod = new Modifiers();
     }
 
-    public Equip(int idHero, int head, int body, int shoulder, int wrist, int hand, int legs, int feet, int cape, int belt, int rightRing, int leftRing, int neck, int rightHand, int leftHand)
+    public Equip(int idHero, int head, int body, int shoulder, int wrist, int hand, int legs, int feet, int cape, int belt, int rightRing, int leftRing, int neck, int rightHand, int leftHand, Modifiers equipMod)
     {
         _idHero = idHero;
         _head = head;
@@ -54,6 +74,16 @@ public class Equip
         _neck = neck;
         _rightHand = rightHand;
         _leftHand = leftHand;
+        _equipMod = equipMod;
+    }
+
+    public void AddTotalMod(Item item)
+    {
+        EquipMod += item.Modifiers;
+    }
+    public void ReduceTotalMod(Item item)
+    {
+        EquipMod -= item.Modifiers;
     }
 }
 public enum EquipSlot

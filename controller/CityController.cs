@@ -8,6 +8,7 @@ public class CityController
         City city = new City(heroId, current);
         AssignCityConnections(city);
         CreateServices(city, level, rarity, quality);
+        CreateWorks(city, level, rarity, quality);
         AddCity(city);
         return city;
     }
@@ -46,12 +47,29 @@ public class CityController
         int totalServ = (int)city.Size;
         while (totalServ > 0)
         {
-            int cityService = rng.Next(Enum.GetValues(typeof(CityServices)).Length - 1);
+            int cityService = rng.Next(Enum.GetValues(typeof(CityServices)).Length);
             Services service = new Services(city.Id, Value.GenerateValue(rng, rarity, quality), (CityServices)cityService);
             if (cityService >= 1)
                 CreateInventory(level, rarity, quality, invColl, rng, service);
             servColl.Insert(service);
             totalServ--;
+        }
+        db.Dispose();
+    }
+
+    public void CreateWorks(City city, int level, int rarity, int quality)
+    {
+        var db = new LiteDatabase(DATA);
+        var workColl = db.GetCollection<Works>(WORKS);
+
+        Random rng = new Random();
+        int totalWork = (int)city.Size * 3;
+        while (totalWork > 0)
+        {
+            int cityWorks = rng.Next(Enum.GetValues(typeof(CityWorks)).Length);
+            Works works = new Works(city.Id, Value.GenerateValue(rng, rarity, quality), (CityWorks)cityWorks);
+            workColl.Insert(works);
+            totalWork--;
         }
         db.Dispose();
     }
@@ -64,20 +82,28 @@ public class CityController
             Item item;
             switch ((int)service.CityServices)
             {
-                case 1:
+                /* case 1:
                     item = InventoryController.GerarItem(service.Id, level - 5, level + 5, rarity, quality);
-                    break;
+                    break; */
                 case 2:
-                    int[] itemArm = { 13, 21, 22, 23, 24, 25, 26, 27, 28, 54, 61, 64, 65, 66 };
-                    item = InventoryController.GerarItem(service.Id, level - 5, level + 5, rarity, quality, itemArm[rng.Next(itemArm.Length - 1)]);
+                    int[] itemMer = { 51, 52, 55 };
+                    item = InventoryController.GerarItem(service.Id, level - 5, level + 5, rarity, quality, itemMer[rng.Next(itemMer.Length)]);
                     break;
                 case 3:
-                    int[] itemAlq = { 52, 53, 62, 68, 69 };
-                    item = InventoryController.GerarItem(service.Id, level - 5, level + 5, rarity, quality, itemAlq[rng.Next(itemAlq.Length - 1)]);
+                    int[] itemArm = { 13, 21, 22, 23, 24, 25, 26, 27, 28, 54, 61, 64, 65, 66 };
+                    item = InventoryController.GerarItem(service.Id, level - 5, level + 5, rarity, quality, itemArm[rng.Next(itemArm.Length)]);
                     break;
                 case 4:
-                    int[] itemMer = { 51, 52, 55 };
-                    item = InventoryController.GerarItem(service.Id, level - 5, level + 5, rarity, quality, itemMer[rng.Next(itemMer.Length - 1)]);
+                    int[] itemAlq = { 52, 53, 62, 68, 69 };
+                    item = InventoryController.GerarItem(service.Id, level - 5, level + 5, rarity, quality, itemAlq[rng.Next(itemAlq.Length)]);
+                    break;
+                case 5:
+                    int[] itemRag = { 31, 32, 33, 34, 61 };
+                    item = InventoryController.GerarItem(service.Id, level - 5, level + 5, rarity, quality, itemRag[rng.Next(itemRag.Length)]);
+                    break;
+                case 6:
+                    int[] itemMag = { 41, 42, 43, 52, 69 };
+                    item = InventoryController.GerarItem(service.Id, level - 5, level + 5, rarity, quality, itemMag[rng.Next(itemMag.Length)]);
                     break;
                 default:
                     item = InventoryController.GerarItem(service.Id, level - 5, level + 5, rarity, quality);
@@ -144,6 +170,7 @@ public class CityController
         col.Delete(city.Id);
         db.Dispose();
     }
+
     public void removeCityConnectionRegistry(City city, int cityConnId)
     {
         city.Connections.Remove(cityConnId);
@@ -202,6 +229,33 @@ public class CityController
         List<Services> ListServices = col.Query().Where(s => s.CityId.Equals(cityId)).ToList();
         db.Dispose();
         return ListServices;
+    }
+
+    public Works GetWork(int id)
+    {
+        var db = new LiteDatabase(DATA);
+        var col = db.GetCollection<Works>(WORKS);
+        Works work;
+        try
+        {
+            work = col.Query().Where(w => w.Id.Equals(id)).First();
+            db.Dispose();
+            return work;
+        }
+        catch (System.InvalidOperationException)
+        {
+            Console.WriteLine("Trabalho não consta no registro");
+            return null;
+        }
+    }
+
+    public List<Works> GetWorkList(int cityId)
+    {
+        var db = new LiteDatabase(DATA);
+        var col = db.GetCollection<Works>(WORKS);
+        List<Works> ListWorks = col.Query().Where(w => w.CityId.Equals(cityId)).ToList();
+        db.Dispose();
+        return ListWorks;
     }
 
     public void CityServicesController(City city, Hero hero)
@@ -414,5 +468,9 @@ public class CityController
                     break;
             }
         }
+    }
+
+    public void CityWorksController(City city, Hero hero){
+        
     }
 }

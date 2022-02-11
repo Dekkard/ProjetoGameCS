@@ -1,5 +1,6 @@
 using static BaseController;
 using LiteDB;
+#pragma warning disable 8600, 8604
 public class EquipController
 {
     /* private int _heroId;
@@ -48,7 +49,7 @@ public class EquipController
         int it = (int)item.ItemType;
         var db = new LiteDatabase("data.db");
         var col = db.GetCollection<Item>(INVENTORY);
-        Item itemOld;
+        Item itemOld = null;
         switch (slot)
         {
             case 1:
@@ -244,7 +245,7 @@ public class EquipController
                 }
                 break;
             case 13:
-                if (!new[] { 21, 22, 23, 33, 41 }.Contains(it))
+                if (!new[] { 21, 22, 23, 33, 41, 42, 24, 25, 26, 27, 28, 31, 32, 34, 43 }.Contains(it))
                     Console.WriteLine("Este item não pode ser colocado nesse espaço");
                 else if (new[] { 24, 25, 26, 27, 28, 31, 32, 34, 43 }.Contains(it))
                 {
@@ -279,7 +280,7 @@ public class EquipController
                 }
                 break;
             case 14:
-                if (!new[] { 13, 21, 22, 23, 33, 41, 42 }.Contains(it))
+                if (!new[] { 13, 21, 22, 23, 33, 41, 42, 24, 25, 26, 27, 28, 31, 32, 34, 43 }.Contains(it))
                     Console.WriteLine("Este item não pode ser colocado nesse espaço");
                 else if (new[] { 24, 25, 26, 27, 28, 31, 32, 34, 43 }.Contains(it))
                 {
@@ -314,16 +315,18 @@ public class EquipController
                 }
                 break;
         }
+        if (itemOld != null)
+            equip.ReduceTotalMod(itemOld);
+        equip.AddTotalMod(item);
         db.Dispose();
     }
     public static void RemoveEquip(int slot, Equip equip)
     {
         var db = new LiteDatabase("data.db");
         var col = db.GetCollection<Item>(INVENTORY);
-        Item itemOld;
+        Item itemOld = null;
         try
         {
-
             switch (slot)
             {
                 case 1:
@@ -411,6 +414,7 @@ public class EquipController
                     col.Update(itemOld);
                     break;
             }
+            equip.ReduceTotalMod(itemOld);
         }
         catch (System.InvalidOperationException)
         {

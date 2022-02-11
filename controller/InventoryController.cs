@@ -4,12 +4,12 @@ using LiteDB;
 public class InventoryController
 {
     // private List<Item> inventory = new List<Item>();
+    // private Value vault = new Value(0, 0, 0, 0);
     private int _ownerId;
     public InventoryController(int id)
     {
         _ownerId = id;
     }
-    private Value vault = new Value(0, 0, 0, 0);
 
     public void PrintInv()
     {
@@ -42,11 +42,18 @@ public class InventoryController
         var inv = db.GetCollection<Item>(INVENTORY);
         try
         {
-            var itemFound = inv.Query().Where(x => x.Name.Equals(item.Name)).First();
-            itemFound.Qtd += item.Qtd;
-            itemFound.Value += item.Value;
-            itemFound.Weight += item.Weight;
-            inv.Update(itemFound);
+            Item itemFound = inv.Query().Where(x => x.Name.Equals(item.Name)).First();
+            if (itemFound.Equals(item))
+            {
+                itemFound.Qtd += item.Qtd;
+                itemFound.Value += item.Value;
+                itemFound.Weight += item.Weight;
+                inv.Update(itemFound);
+            }
+            else
+            {
+                inv.Insert(item);
+            }
         }
         catch (System.InvalidOperationException)
         {
@@ -146,16 +153,18 @@ public class InventoryController
         }
         db.Dispose();
     }
+
     public static Item GerarItem(int ownerId, int lMin, int lMax, int rarityMod, int qualityMod, int choosenItem = 0)
     {
         Item item = new Item();
         item.ownerId = ownerId;
+
         Random rng = new Random();
+
         item.Level = rng.Next(lMin < 1 ? 1 : lMin, lMax > Hero.LEVELCAP ? Hero.LEVELCAP : lMax);
         // Console.Write("Entre(" + (lMin < 1 ? 1 : lMin) + "," + (lMax > Hero.LEVELCAP ? Hero.LEVELCAP : lMax) + ") lvl" + item.Level);
         item.Rarity = rng.Next(0, rarityMod);
         item.Quality = rng.Next(0, qualityMod);
-        item.Weight = rng.Next(5, 10);
         item.Value = Value.GenerateValue(rng, item.Rarity, item.Quality);
         item.Qtd = 1;
         int itemCategory;
@@ -179,11 +188,14 @@ public class InventoryController
                 t = Type.GetType(Enum.GetName(typeof(ItemType), itemType).ToString() + "Name");
                 et = Enum.GetValues(t);
                 // Nome base
-                itemName = Enum.GetName(t, rng.Next(et.Length - 1));
+                itemName = Enum.GetName(t, rng.Next(et.Length));
                 // Nome que expressa qualidade
                 itemName += " " + Enum.GetName(typeof(QualityName), MaterialLevelingRng(item.Level, item.Rarity, item.Quality, 0.7, 0.7, 0.7, 1.0, typeof(QualityName)));
                 // Nome do material que compôem o item, a partir da lista
-                itemName += " de " + MaterialNaming(new[] { 65, 66, 67 }, item.Level, item.Rarity, item.Quality);
+                int[] materialsApp = { 65, 66, 67 };
+                int mat = materialsApp[new Random().Next(materialsApp.Length)];
+                item.Weight = WeightByMaterial(rng, mat);
+                itemName += " de " + MaterialNaming(mat, item.Level, item.Rarity, item.Quality);
                 // Nome da raridade do item
                 itemName += " " + Enum.GetName(typeof(RarityName), MaterialLevelingRng(item.Level, item.Rarity, item.Quality, 0.7, 0.7, 0.7, 1.0, typeof(RarityName)));
                 item.IsEquipable = true;
@@ -195,17 +207,18 @@ public class InventoryController
                 t = Type.GetType(Enum.GetName(typeof(ItemType), itemType).ToString() + "Name");
                 et = Enum.GetValues(t);
                 // Nome base
-                itemName = Enum.GetName(t, rng.Next(et.Length - 1));
+                itemName = Enum.GetName(t, rng.Next(et.Length));
                 switch (itemType)
                 {
                     case 11:
                     case 12:
                         // Nome do material que compôem o item, a partir da lista
-                        itemName += " de " + MaterialNaming(new[] { 65 }, item.Level, item.Rarity, item.Quality);
+                        itemName += " de " + MaterialNaming(65, item.Level, item.Rarity, item.Quality);
                         // Nome que expressa qualidade
                         itemName += " " + Enum.GetName(typeof(QualityName), MaterialLevelingRng(item.Level, item.Rarity, item.Quality, 0.7, 0.7, 0.7, 1.0, typeof(QualityName)));
                         // Segundo nome do material que compôem o item, a partir da lista
-                        itemName += " de " + MaterialNaming(new[] { 64 }, item.Level, item.Rarity, item.Quality);
+                        itemName += " de " + MaterialNaming(64, item.Level, item.Rarity, item.Quality);
+                        item.Weight = (WeightByMaterial(rng, 64) + WeightByMaterial(rng, 65)) / 5;
                         // Nome da raridade do item
                         itemName += " " + Enum.GetName(typeof(RarityName), MaterialLevelingRng(item.Level, item.Rarity, item.Quality, 0.7, 0.7, 0.7, 1.0, typeof(RarityName)));
                         break;
@@ -213,7 +226,8 @@ public class InventoryController
                         // Nome que expressa qualidade
                         itemName += " " + Enum.GetName(typeof(QualityName), MaterialLevelingRng(item.Level, item.Rarity, item.Quality, 0.7, 0.7, 0.7, 1.0, typeof(QualityName)));
                         // Nome do material que compôem o item, a partir da lista
-                        itemName += " de " + MaterialNaming(new[] { 65 }, item.Level, item.Rarity, item.Quality);
+                        itemName += " de " + MaterialNaming(65, item.Level, item.Rarity, item.Quality);
+                        WeightByMaterial(rng, 65);
                         // Nome da raridade do item
                         itemName += " " + Enum.GetName(typeof(RarityName), MaterialLevelingRng(item.Level, item.Rarity, item.Quality, 0.7, 0.7, 0.7, 1.0, typeof(RarityName)));
                         break;
@@ -227,11 +241,12 @@ public class InventoryController
                 t = Type.GetType(Enum.GetName(typeof(ItemType), itemType).ToString() + "Name");
                 et = Enum.GetValues(t);
                 // Nome base
-                itemName = Enum.GetName(t, rng.Next(et.Length - 1));
+                itemName = Enum.GetName(t, rng.Next(et.Length));
                 // Nome que expressa qualidade
                 itemName += " " + Enum.GetName(typeof(QualityName), MaterialLevelingRng(item.Level, item.Rarity, item.Quality, 0.7, 0.7, 0.7, 1.0, typeof(QualityName)));
                 // Nome do material que compôem o item, a partir da lista
-                itemName += " de " + MaterialNaming(new[] { 65 }, item.Level, item.Rarity, item.Quality);
+                itemName += " de " + MaterialNaming(65, item.Level, item.Rarity, item.Quality);
+                WeightByMaterial(rng, 65);
                 // Nome da raridade do item
                 itemName += " " + Enum.GetName(typeof(RarityName), MaterialLevelingRng(item.Level, item.Rarity, item.Quality, 0.7, 0.7, 0.7, 1.0, typeof(RarityName)));
                 item.IsEquipable = true;
@@ -243,11 +258,14 @@ public class InventoryController
                 t = Type.GetType(Enum.GetName(typeof(ItemType), itemType).ToString() + "Name");
                 et = Enum.GetValues(t);
                 // Nome base
-                itemName = Enum.GetName(t, rng.Next(et.Length - 1));
+                itemName = Enum.GetName(t, rng.Next(et.Length));
                 // Nome que expressa qualidade
                 itemName += " " + Enum.GetName(typeof(QualityName), MaterialLevelingRng(item.Level, item.Rarity, item.Quality, 0.7, 0.7, 0.7, 1.0, typeof(QualityName)));
                 // Nome do material que compôem o item, a partir da lista
-                itemName += " de " + MaterialNaming(new[] { 61, 65 }, item.Level, item.Rarity, item.Quality);
+                int[] materialsRang = { 61, 65 };
+                int matRang = materialsRang[new Random().Next(materialsRang.Length)];
+                item.Weight = WeightByMaterial(rng, matRang);
+                itemName += " de " + MaterialNaming(matRang, item.Level, item.Rarity, item.Quality);
                 // Nome da raridade do item
                 itemName += " " + Enum.GetName(typeof(RarityName), MaterialLevelingRng(item.Level, item.Rarity, item.Quality, 0.7, 0.7, 0.7, 1.0, typeof(RarityName)));
                 item.IsEquipable = true;
@@ -259,13 +277,19 @@ public class InventoryController
                 t = Type.GetType(Enum.GetName(typeof(ItemType), itemType).ToString() + "Name");
                 et = Enum.GetValues(t);
                 // Nome base
-                itemName = Enum.GetName(t, rng.Next(et.Length - 1));
+                itemName = Enum.GetName(t, rng.Next(et.Length));
                 // Nome do material que compôem o item, a partir da lista
-                itemName += " de " + MaterialNaming(new[] { 61, 65 }, item.Level, item.Rarity, item.Quality);
+                int[] materialsMag = { 61, 65 };
+                int matMag = materialsMag[new Random().Next(materialsMag.Length)];
+                item.Weight = WeightByMaterial(rng, matMag) / 3;
+                itemName += " de " + MaterialNaming(matMag, item.Level, item.Rarity, item.Quality);
                 // Nome que expressa qualidade
                 itemName += " " + Enum.GetName(typeof(QualityName), MaterialLevelingRng(item.Level, item.Rarity, item.Quality, 0.7, 0.7, 0.7, 1.0, typeof(QualityName)));
                 // Segundo nome do material que compôem o item, a partir da lista
-                itemName += " de " + MaterialNaming(new[] { 68, 69 }, item.Level, item.Rarity, item.Quality);
+                materialsMag = new[] { 68, 69 };
+                matMag = materialsMag[new Random().Next(materialsMag.Length)];
+                item.Weight += WeightByMaterial(rng, matMag);
+                itemName += " de " + MaterialNaming(matMag, item.Level, item.Rarity, item.Quality);
                 // Nome da raridade do item
                 itemName += " " + Enum.GetName(typeof(RarityName), MaterialLevelingRng(item.Level, item.Rarity, item.Quality, 0.7, 0.7, 0.7, 1.0, typeof(RarityName)));
                 item.IsEquipable = true;
@@ -277,27 +301,35 @@ public class InventoryController
                 t = Type.GetType(Enum.GetName(typeof(ItemType), itemType).ToString() + "Name");
                 et = Enum.GetValues(t);
                 // Nome base
-                itemName = Enum.GetName(t, rng.Next(et.Length - 1));
+                itemName = Enum.GetName(t, rng.Next(et.Length));
                 switch (itemType)
                 {
                     case 51:
                         itemName += " " + Enum.GetName(typeof(EdiblesQualityName), MaterialLevelingRng(item.Level, item.Rarity, item.Quality, 0.7, 0.7, 0.7, 1.0, typeof(EdiblesQualityName)));
                         item.Qtd = rng.Next(1, 5);
+                        item.Weight = (WeightByMaterial(rng, 62)) * item.Qtd;
                         break;
                     case 52:
                         itemName = Enum.GetName(t, MaterialLevelingRng(item.Level, item.Rarity, item.Quality, 0.7, 0.7, 0.7, 1.0, t));
                         itemName += " " + Enum.GetName(typeof(EdiblesQualityName), MaterialLevelingRng(item.Level, item.Rarity, item.Quality, 0.7, 0.7, 0.7, 1.0, typeof(EdiblesQualityName)));
                         item.Qtd = rng.Next(1, 5);
+                        item.Weight = (WeightByMaterial(rng, 62)) * item.Qtd;
                         break;
                     case 53:
                         itemName = "Poção de " + itemName;
+                        item.Qtd = rng.Next(1, 3);
+                        item.Weight = (WeightByMaterial(rng, 63)) * item.Qtd;
                         break;
                     case 54:
                         item.Modifiers = Modifiers.ItemStatusGen(lMin, lMax);
                         if (item.Modifiers.isEnchanted())
                             itemName += " Encantada";
-                        itemName += " de " + MaterialNaming(new[] { 61, 65 }, item.Level, item.Rarity, item.Quality);
+                        int[] materialsAmmo = { 61, 65 };
+                        int matAmmo = materialsAmmo[new Random().Next(materialsAmmo.Length)];
+
+                        itemName += " de " + MaterialNaming(matAmmo, item.Level, item.Rarity, item.Quality);
                         item.Qtd = rng.Next(1, 25);
+                        item.Weight = (WeightByMaterial(rng, matAmmo) / 10) * item.Qtd;
                         break;
                 }
                 item.IsEquipable = false;
@@ -310,11 +342,12 @@ public class InventoryController
                 et = Enum.GetValues(t);
                 // Nome base
                 itemName = Enum.GetName(t, MaterialLevelingRng(item.Level, item.Rarity, item.Quality, 0.7, 0.7, 0.7, 1.0, t));
+                item.Weight = (WeightByMaterial(rng, itemType));
                 /* if (itemType >= 61 && itemType <= 63)
-                    itemName = Enum.GetName(t, rng.Next(et.Length - 1));
+                    itemName = Enum.GetName(t, rng.Next(et.Length ));
                 else if (itemType >= 64 && itemType <= 69)
                 {
-                    itemName = Enum.GetName(t, rng.Next(et.Length - 1*(10000/item.Level))%(item.Rarity*item.Quality));
+                    itemName = Enum.GetName(t, rng.Next(et.Length*(10000/item.Level))%(item.Rarity*item.Quality));
                     double d = ((item.Level * 8) + ((item.Rarity + item.Quality) / 2)) / 100;
                     itemName = Enum.GetName(t, rng.Next((int)(Math.Floor(d > et.Length ? et.Length : (d < 0 ? 0 : d)))));
                 } */
@@ -325,17 +358,19 @@ public class InventoryController
             item.Modifiers = Modifiers.ItemStatusGen(lMin, lMax);
         else
             item.Modifiers = new Modifiers(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        item.Name = itemName.Replace('_', ' ');
+        item.Name = itemName.Replace('_', ' ') + (item.Modifiers.Cursed ? " Amaldiçoado" : item.Modifiers.Blessed ? " Abençoado" : "");
         item.ItemType = (ItemType)itemType;
         // Console.WriteLine("tipo: " + (ItemType)itemType + ": ");
         return item;
     }
-    public static string MaterialNaming(int[] possibleMaterials, int level, int rarity, int quality)
+
+    public static string MaterialNaming(int mat, int level, int rarity, int quality)
     {
-        int mat = possibleMaterials[new Random().Next(possibleMaterials.Length - 1)];
+        // int mat = possibleMaterials[new Random().Next(possibleMaterials.Length)];
         Type type = Type.GetType(Enum.GetName(typeof(ItemType), mat).ToString() + "Name");
         return Enum.GetName(type, MaterialLevelingRng(level, rarity, quality, 0.7, 0.7, 0.7, 1.0, type));
     }
+
     public static int MaterialLevelingRng(int level, int rarity, int quality, double levelrates, double rarityRates, double qualityRates, double capRates, Type t)
     {
         Random rng = new Random();
@@ -351,6 +386,7 @@ public class InventoryController
         double chanceRed = Math.Pow(chance - 100, 1 / et);
         return rng.Next(cap) > chance - (level * rarity * quality) ? n : MLTHelper(rng, level, rarity, quality, (int)(cap / capRed), (int)(chance / chanceRed), n - 1, capRed, chanceRed);
     }
+
     public static int MLTHelper(Random rng, int level, int rarity, int quality, int cap, int chance, int num, double capRed, double chanceRed)
     {
         if (num <= 0)
@@ -359,5 +395,30 @@ public class InventoryController
             return rng.Next(cap) > chance - (level * rarity * quality) ? num : MLTHelper(rng, level, rarity, quality, (int)(cap / capRed), (int)(chance / chanceRed), num - 1, capRed, chanceRed);
     }
 
-    
+    public static double WeightByMaterial(Random rng, int material)
+    {
+        switch (material)
+        {
+            case 61:
+                return (rng.NextDouble() + 0.5) * 2;
+            case 62:
+                return (rng.NextDouble() + 0.05) * 2;
+            case 63:
+                return (rng.NextDouble() + 0.01) * 2;
+            case 64:
+                return (rng.NextDouble() + 0.1) * 5;
+            case 65:
+                return (rng.NextDouble() + 1.0) * 5;
+            case 66:
+                return (rng.NextDouble() + 0.5) * 4;
+            case 67:
+                return (rng.NextDouble() + 0.3) * 2;
+            case 68:
+                return (rng.NextDouble() + 0.1) * 2;
+            case 69:
+                return (rng.NextDouble() + 0.05) * 2;
+            default:
+                return (rng.NextDouble() + 1.0) * 5.0;
+        }
+    }
 }
