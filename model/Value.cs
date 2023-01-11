@@ -85,7 +85,10 @@ public class Value
     {
         return new Value(v.Platinum * val, v.Gold * val, v.Silver * val, v.Copper * val);
     }
-
+    public static Value operator /(Value v, int val)
+    {
+        return new Value(v.Platinum / val, v.Gold / val, v.Silver / val, v.Copper / val);
+    }
     public override string ToString()
     {
         return _platinum + ", " + _gold + ", " + _silver + ", " + _copper;

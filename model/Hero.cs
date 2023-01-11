@@ -17,6 +17,8 @@ public class Hero : Status
     private Equip equipment;
     private long _experience;
     private Value _riches;
+    private int _reputation;
+    private int _karma;
 
     public InventoryController inventory;
     // public EquipController equipment;
@@ -32,34 +34,20 @@ public class Hero : Status
     public Equip Equipment { get => equipment; set => equipment = value; }
     public long Experience { get => _experience; set => _experience = value; }
     public Value Riches { get => _riches; set => _riches = value; }
+    public int Reputation { get => _reputation; set => _reputation = value; }
+    public int Karma { get => _karma; set => _karma = value; }
 
-    public Hero()
+    public Hero(string nome = "", int level = 0, int heroType = 0, int reputation = 0, int karma = 0, int strength = 0, int perception = 0, int endurance = 0, int charisma = 0, int intelligence = 0, int agility = 0, int luck = 0) : base(strength, perception, endurance, charisma, intelligence, agility, luck)
     {
         _id = ObjectId.NewObjectId().Increment;
         equipment = new Equip();
-        _experience = 0L;
         _riches = new Value(0, 0, 0, 0);
-    }
-    public Hero(string nome, int level, int heroType)
-    {
-        _id = ObjectId.NewObjectId().Increment;
         _name = nome;
         _level = level;
         _heroType = (HeroType)heroType;
-        equipment = new Equip();
         _experience = 0L;
-        _riches = new Value(0, 0, 0, 0);
-    }
-
-    public Hero(string nome, int level, int heroType, int strength, int perception, int endurance, int charisma, int intelligence, int agility, int luck) : base(strength, perception, endurance, charisma, intelligence, agility, luck)
-    {
-        _id = ObjectId.NewObjectId().Increment;
-        _name = nome;
-        _level = level;
-        _heroType = (HeroType)heroType;
-        equipment = new Equip();
-        _experience = 0L;
-        _riches = new Value(0, 0, 0, 0);
+        _reputation = reputation;
+        _karma = karma;
     }
     public void levelUp()
     {
