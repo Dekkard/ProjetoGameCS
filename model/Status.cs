@@ -44,7 +44,7 @@ public class Status
     {
         return _strength + ";" + _perception + ";" + _endurance + ";" + _charisma + ";" + _intelligence + ";" + _agility + ";" + _luck + ";";
     }
-    public void StatusRead(string line)
+    /* public void StatusRead(string line)
     {
         string[] l = line.Split(";");
         _strength = int.Parse(l[0]);
@@ -54,5 +54,5 @@ public class Status
         _intelligence = int.Parse(l[4]);
         _agility = int.Parse(l[5]);
         _luck = int.Parse(l[6]);
-    }
+    } */
 }

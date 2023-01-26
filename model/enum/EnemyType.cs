@@ -44,7 +44,7 @@ public enum MysticalRank
 }
 public enum DivineName
 {
-    Guerreiro_Alado, Paradean, Praetor, Guardião, Escudeiro, Cavaleiro_dos_Céus,
+    Guerreiro_Alado, Escudeiro, Paradean, Praetor, Guardião, Cavaleiro_dos_Céus,
 }
 public enum DivineRank
 {
@@ -56,7 +56,7 @@ public enum HellishName
 }
 public enum HellishRank
 {
-    Brucha, Menor, Winkar, Maior, Legionari, Krommar, Duque, Conde, Rei,
+    Brucha, Menor, Winkar, Maior, Legionari, Krommar, Duque, Conde, Kzar,
 }
 public enum EldritchName
 {

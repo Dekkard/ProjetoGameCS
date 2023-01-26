@@ -1,49 +1,45 @@
+using static BaseService;
 #pragma warning disable 8600, 8601, 8602, 8603, 8604, 8605, 8625
 public class EnemyController
 {
-    public static Enemy NewEnemy(int level, int rarity, int quality, int aiLvl, int[] enemyTypeList = null)
+    
+    private Enemy enemy;
+    public InventoryController inventoryController;
+    public EquipController equipController;
+
+    public Enemy Enemy { get => enemy; }
+    public EnemyController(LiteDB.LiteDatabase db, Enemy enemy)
+    {
+        this.enemy = enemy;
+        inventoryController = new InventoryController(db, enemy.Id, enemy.Equip);
+        equipController = new EquipController(db, enemy.Equip);
+    }
+   
+    //private LiteDB.LiteDatabase _db;
+    public void GenerateEnemy(int level, int rarity, int quality, int aiLvl, LiteDB.LiteDatabase db, int[] enemyTypeList = null)
     {
         Enemy enemy = new Enemy();
         Random rng = new Random();
 
         // int[] status = { 0, 0, 0, 5, 0, 0, 5 };
         int ptsStatus = 25 + (level - 1) * 2;
-        while (ptsStatus-- > 0)
-        {
-            switch (rng.Next(4))
-            {
-                case 0:
-                    enemy.Strength++;
-                    break;
-                case 1:
-                    enemy.Perception++;
-                    break;
-                case 2:
-                    enemy.Endurance++;
-                    break;
-                case 3:
-                    enemy.Intelligence++;
-                    break;
-                case 4:
-                    enemy.Agility++;
-                    break;
-            }
-        }
-        enemy.Charisma = 5;
-        enemy.Luck = 5;
 
+        enemy.Strength = ptsStatus * rng.Next(5);
+        enemy.Perception = ptsStatus * rng.Next(5);
+        enemy.Endurance = ptsStatus * rng.Next(5);
+        enemy.Charisma = ptsStatus * rng.Next(5);
+        enemy.Intelligence = ptsStatus * rng.Next(5);
+        enemy.Agility = ptsStatus * rng.Next(5);
+        enemy.Luck = ptsStatus * rng.Next(5);
         enemy.TotalHitPoints();
         enemy.TotalManaPoints();
-
-        enemy.inventory = new InventoryController(enemy.Id);
-        enemy.Equipment = new Equip();
 
         enemy.Riches = Value.GenerateValue(rng, rarity, quality);
 
         int minValue = (level - 5) < 1 ? 1 : level - 5;
-        int maxValue = (level + 5) > Hero.LEVELCAP ? Hero.LEVELCAP : level + 5;
+        int maxValue = (level + 5) > LEVELCAP ? LEVELCAP : level + 5;
         enemy.Level = rng.Next(minValue, maxValue);
-        enemy.IaLevel = rng.Next(Hero.LEVELCAP) > Hero.LEVELCAP - enemy.Level ? 6 : EnemyAIRng(rng, enemy.Level, 5, 3);
+        enemy.IaLevel = rng.Next(LEVELCAP) > LEVELCAP - enemy.Level ? 6 : EnemyAIRng(rng, enemy.Level, 5, 3);
         int enemyType;
         if (enemyTypeList != null)
         {
@@ -91,9 +87,8 @@ public class EnemyController
                                 item = InventoryController.GerarItem(enemy.Id, minValue, maxValue, rarity, quality, meleeItemList[rng.Next(meleeItemList.Length)]);
                             }
                         }
-                        enemy.inventory.AddItem(item);
-                        EquipController.ChangeEquip(item, i, enemy.Equipment);
-                        enemy.Equipment.AddTotalMod(item);
+                        inventoryController.AddItem(item);
+                        equipController.ChangeEquip(item, i);
                     }
                 }
                 break;
@@ -103,19 +98,19 @@ public class EnemyController
                 break;
         }
         enemy.Name = name.Replace("_", " ");
-        return enemy;
+        this.enemy = enemy;
     }
     public static int EnemylLevelingRng(int level, int rarity, int quality, double levelrates, double rarityRates, double qualityRates, double capRates, Type t)
     {
         Random rng = new Random();
         int et = Enum.GetValues(t).Length - 1;
-        double d = (((level * et) + rng.Next((int)(rarity + quality) / 2)) / (Hero.LEVELCAP)) * 1.5;
+        double d = (((level * et) + rng.Next((int)(rarity + quality) / 2)) / (LEVELCAP)) * 1.5;
         int n = (int)(Math.Floor(d > et ? et : (d < 0 ? 0 : d)));
         level = (int)Math.Pow(level, levelrates);
         rarity = (int)Math.Pow(rarity, rarityRates);
         quality = (int)Math.Pow(quality, qualityRates);
-        int cap = (int)Math.Pow(Hero.LEVELCAP, 3 * capRates);
-        int chance = cap - Hero.LEVELCAP;
+        int cap = (int)Math.Pow(LEVELCAP, 3 * capRates);
+        int chance = cap - LEVELCAP;
         double capRed = Math.Pow(cap - 1000, 1 / et);
         double chanceRed = Math.Pow(chance - 100, 1 / et);
         return rng.Next(cap) > chance - (level * rarity * quality) ? n : ELRHelper(rng, level, rarity, quality, (int)(cap / capRed), (int)(chance / chanceRed), n - 1, capRed, chanceRed);
@@ -131,7 +126,7 @@ public class EnemyController
     {
         if (ailvl > 1)
         {
-            return rng.Next(Hero.LEVELCAP) > Hero.LEVELCAP - (level * factor) ? ailvl : EnemyAIRng(rng, level, ailvl - 1, factor * 3);
+            return rng.Next(LEVELCAP) > LEVELCAP - (level * factor) ? ailvl : EnemyAIRng(rng, level, ailvl - 1, factor * 3);
         }
         else
         {

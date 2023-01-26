@@ -1,445 +1,206 @@
-using static BaseController;
+using static BaseService;
 using LiteDB;
-#pragma warning disable 8600, 8604
+#pragma warning disable 8600, 8604, 8625, 8603
 public class EquipController
 {
-    /* private int _heroId;
 
-    public int HeroId { get => _heroId; set => _heroId = value; }
-    public EquipController(int id){_heroId = id;} */
-    public static int GetEquipSlot(int slot, Equip equip)
+    LiteDatabase _db;
+    private Equip _equip;
+
+    public EquipController(LiteDatabase db, Equip equip)
+    {
+        _db = db;
+        _equip = equip;
+    }
+    public int GetEquipSlot(int slot)
     {
         switch (slot)
         {
             case 1:
-                return equip.Head;
+                return _equip.Head;
             case 2:
-                return equip.Body;
+                return _equip.Body;
             case 3:
-                return equip.Shoulder;
+                return _equip.Shoulder;
             case 4:
-                return equip.Wrist;
+                return _equip.Wrist;
             case 5:
-                return equip.Hand;
+                return _equip.Hand;
             case 6:
-                return equip.Legs;
+                return _equip.Legs;
             case 7:
-                return equip.Feet;
+                return _equip.Feet;
             case 8:
-                return equip.Cape;
+                return _equip.Cape;
             case 9:
-                return equip.Belt;
+                return _equip.Belt;
             case 10:
-                return equip.RightRing;
+                return _equip.RightRing;
             case 11:
-                return equip.LeftRing;
+                return _equip.LeftRing;
             case 12:
-                return equip.Neck;
+                return _equip.Neck;
             case 13:
-                return equip.RightHand;
+                return _equip.RightHand;
             case 14:
-                return equip.LeftHand;
+                return _equip.LeftHand;
             default:
                 return 0;
         }
     }
-
-    public static void ChangeEquip(Item item, int slot, Equip equip)
+    public void SetEquipSlot(Item item, int slot)
     {
-        int it = (int)item.ItemType;
-        var db = new LiteDatabase("data.db");
-        var col = db.GetCollection<Item>(INVENTORY);
-        Item itemOld = null;
+        int itemId = 0;
+        if (item != null)
+        {
+            item.Qtd -= 1;
+            _db.GetCollection<Item>(INVENTORY).Update(item);
+            _equip.AddTotalMod(item);
+            itemId = item.Id;
+        }
         switch (slot)
         {
             case 1:
-                if (it != 1)
-                    Console.WriteLine("Este item não pode ser colocado nesse espaço");
-                else
-                {
-                    if (equip.Head != 0)
-                    {
-                        itemOld = col.Query().Where(i => i.Id.Equals(equip.Head)).First();
-                        itemOld.Qtd += 1;
-                        col.Update(itemOld);
-                    }
-                    item.Qtd -= 1;
-                    equip.Head = item.Id;
-                    col.Update(item);
-                }
+                _equip.Head = itemId;
                 break;
             case 2:
-                if (it != 2)
-                    Console.WriteLine("Este item não pode ser colocado nesse espaço");
-                else
-                {
-                    if (equip.Body != 0)
-                    {
-                        itemOld = col.Query().Where(i => i.Id.Equals(equip.Body)).First();
-                        itemOld.Qtd += 1;
-                        col.Update(itemOld);
-                    }
-                    item.Qtd -= 1;
-                    equip.Body = item.Id;
-                    col.Update(item);
-                }
+                _equip.Body = itemId;
                 break;
             case 3:
-                if (it != 3)
-                    Console.WriteLine("Este item não pode ser colocado nesse espaço");
-                else
-                {
-                    if (equip.Shoulder != 0)
-                    {
-                        itemOld = col.Query().Where(i => i.Id.Equals(equip.Shoulder)).First();
-                        itemOld.Qtd += 1;
-                        col.Update(itemOld);
-                    }
-                    item.Qtd -= 1;
-                    equip.Shoulder = item.Id;
-                    col.Update(item);
-                }
+                _equip.Shoulder = itemId;
                 break;
             case 4:
-                if (it != 4)
-                    Console.WriteLine("Este item não pode ser colocado nesse espaço");
-                else
-                {
-                    if (equip.Wrist != 0)
-                    {
-                        itemOld = col.Query().Where(i => i.Id.Equals(equip.Wrist)).First();
-                        itemOld.Qtd += 1;
-                        col.Update(itemOld);
-                    }
-                    item.Qtd -= 1;
-                    equip.Wrist = item.Id;
-                    col.Update(item);
-                }
+                _equip.Wrist = itemId;
                 break;
             case 5:
-                if (it != 5)
-                    Console.WriteLine("Este item não pode ser colocado nesse espaço");
-                else
-                {
-                    if (equip.Hand != 0)
-                    {
-                        itemOld = col.Query().Where(i => i.Id.Equals(equip.Hand)).First();
-                        itemOld.Qtd += 1;
-                        col.Update(itemOld);
-                    }
-                    item.Qtd -= 1;
-                    equip.Hand = item.Id;
-                    col.Update(item);
-                }
+                _equip.Hand = itemId;
                 break;
             case 6:
-                if (it != 6)
-                    Console.WriteLine("Este item não pode ser colocado nesse espaço");
-                else
-                {
-                    if (equip.Legs != 0)
-                    {
-                        itemOld = col.Query().Where(i => i.Id.Equals(equip.Legs)).First();
-                        itemOld.Qtd += 1;
-                        col.Update(itemOld);
-                    }
-                    item.Qtd -= 1;
-                    equip.Legs = item.Id;
-                    col.Update(item);
-                }
+                _equip.Legs = itemId;
                 break;
             case 7:
-                if (it != 7)
-                    Console.WriteLine("Este item não pode ser colocado nesse espaço");
-                else
-                {
-                    if (equip.Feet != 0)
-                    {
-                        itemOld = col.Query().Where(i => i.Id.Equals(equip.Feet)).First();
-                        itemOld.Qtd += 1;
-                        col.Update(itemOld);
-                    }
-                    item.Qtd -= 1;
-                    equip.Feet = item.Id;
-                    col.Update(item);
-                }
+                _equip.Feet = itemId;
                 break;
             case 8:
-                if (it != 8)
-                    Console.WriteLine("Este item não pode ser colocado nesse espaço");
-                else
-                {
-                    if (equip.Cape != 0)
-                    {
-                        itemOld = col.Query().Where(i => i.Id.Equals(equip.Cape)).First();
-                        itemOld.Qtd += 1;
-                        col.Update(itemOld);
-                    }
-                    item.Qtd -= 1;
-                    equip.Cape = item.Id;
-                    col.Update(item);
-                }
+                _equip.Cape = itemId;
                 break;
             case 9:
-                if (it != 9)
-                    Console.WriteLine("Este item não pode ser colocado nesse espaço");
-                else
-                {
-                    if (equip.Belt != 0)
-                    {
-                        itemOld = col.Query().Where(i => i.Id.Equals(equip.Belt)).First();
-                        itemOld.Qtd += 1;
-                        col.Update(itemOld);
-                    }
-                    item.Qtd -= 1;
-                    equip.Belt = item.Id;
-                    col.Update(item);
-                }
+                _equip.Belt = itemId;
                 break;
             case 10:
-                if (it != 11)
-                    Console.WriteLine("Este item não pode ser colocado nesse espaço");
-                else
-                {
-                    if (equip.RightRing != 0)
-                    {
-                        itemOld = col.Query().Where(i => i.Id.Equals(equip.RightRing)).First();
-                        itemOld.Qtd += 1;
-                        col.Update(itemOld);
-                    }
-                    item.Qtd -= 1;
-                    equip.RightRing = item.Id;
-                    col.Update(item);
-                }
+                _equip.RightRing = itemId;
                 break;
             case 11:
-                if (it != 11)
-                    Console.WriteLine("Este item não pode ser colocado nesse espaço");
-                else
-                {
-                    if (equip.LeftRing != 0)
-                    {
-                        itemOld = col.Query().Where(i => i.Id.Equals(equip.LeftRing)).First();
-                        itemOld.Qtd += 1;
-                        col.Update(itemOld);
-                    }
-                    item.Qtd -= 1;
-                    equip.LeftRing = item.Id;
-                    col.Update(item);
-                }
+                _equip.LeftRing = itemId;
                 break;
             case 12:
-                if (it != 12)
-                    Console.WriteLine("Este item não pode ser colocado nesse espaço");
-                else
-                {
-                    if (equip.Neck != 0)
-                    {
-                        itemOld = col.Query().Where(i => i.Id.Equals(equip.Neck)).First();
-                        itemOld.Qtd += 1;
-                        col.Update(itemOld);
-                    }
-                    item.Qtd -= 1;
-                    equip.Neck = item.Id;
-                    col.Update(item);
-                }
+                _equip.Neck = itemId;
                 break;
             case 13:
-                if (!new[] { 21, 22, 23, 33, 41, 42, 24, 25, 26, 27, 28, 31, 32, 34, 43 }.Contains(it))
-                    Console.WriteLine("Este item não pode ser colocado nesse espaço");
-                else if (new[] { 24, 25, 26, 27, 28, 31, 32, 34, 43 }.Contains(it))
-                {
-                    if (equip.LeftHand != 0)
-                    {
-                        itemOld = col.Query().Where(i => i.Id.Equals(equip.LeftHand)).First();
-                        itemOld.Qtd += 1;
-                        equip.LeftHand = 0;
-                        col.Update(itemOld);
-                    }
-                    if (equip.RightHand != 0)
-                    {
-                        itemOld = col.Query().Where(i => i.Id.Equals(equip.RightHand)).First();
-                        itemOld.Qtd += 1;
-                        col.Update(itemOld);
-                    }
-                    item.Qtd -= 1;
-                    equip.RightHand = item.Id;
-                    col.Update(item);
-                }
-                else
-                {
-                    if (equip.RightHand != 0)
-                    {
-                        itemOld = col.Query().Where(i => i.Id.Equals(equip.RightHand)).First();
-                        itemOld.Qtd += 1;
-                        col.Update(itemOld);
-                    }
-                    item.Qtd -= 1;
-                    equip.RightHand = item.Id;
-                    col.Update(item);
-                }
+                _equip.RightHand = itemId;
                 break;
             case 14:
-                if (!new[] { 13, 21, 22, 23, 33, 41, 42, 24, 25, 26, 27, 28, 31, 32, 34, 43 }.Contains(it))
-                    Console.WriteLine("Este item não pode ser colocado nesse espaço");
-                else if (new[] { 24, 25, 26, 27, 28, 31, 32, 34, 43 }.Contains(it))
-                {
-                    if (equip.LeftHand != 0)
-                    {
-                        itemOld = col.Query().Where(i => i.Id.Equals(equip.LeftHand)).First();
-                        itemOld.Qtd += 1;
-                        equip.LeftHand = 0;
-                        col.Update(itemOld);
-                    }
-                    if (equip.RightHand != 0)
-                    {
-                        itemOld = col.Query().Where(i => i.Id.Equals(equip.RightHand)).First();
-                        itemOld.Qtd += 1;
-                        col.Update(itemOld);
-                    }
-                    item.Qtd -= 1;
-                    equip.RightHand = item.Id;
-                    col.Update(item);
-                }
-                else
-                {
-                    if (equip.LeftHand != 0)
-                    {
-                        itemOld = col.Query().Where(i => i.Id.Equals(equip.LeftHand)).First();
-                        itemOld.Qtd += 1;
-                        col.Update(itemOld);
-                    }
-                    item.Qtd -= 1;
-                    equip.LeftHand = item.Id;
-                    col.Update(item);
-                }
+                _equip.LeftHand = itemId;
                 break;
         }
-        if (itemOld != null)
-            equip.ReduceTotalMod(itemOld);
-        equip.AddTotalMod(item);
-        db.Dispose();
     }
-    public static void RemoveEquip(int slot, Equip equip)
+    public int[] GetSlotType(int slot)
     {
-        var db = new LiteDatabase("data.db");
-        var col = db.GetCollection<Item>(INVENTORY);
-        Item itemOld = null;
-        try
+        switch (slot)
         {
-            switch (slot)
-            {
-                case 1:
-                    itemOld = col.Query().Where(i => i.Id.Equals(equip.Head)).First();
-                    itemOld.Qtd += 1;
-                    equip.Head = 0;
-                    col.Update(itemOld);
-                    break;
-                case 2:
-                    itemOld = col.Query().Where(i => i.Id.Equals(equip.Body)).First();
-                    itemOld.Qtd += 1;
-                    equip.Body = 0;
-                    col.Update(itemOld);
-                    break;
-                case 3:
-                    itemOld = col.Query().Where(i => i.Id.Equals(equip.Shoulder)).First();
-                    itemOld.Qtd += 1;
-                    equip.Shoulder = 0;
-                    col.Update(itemOld);
-                    break;
-                case 4:
-                    itemOld = col.Query().Where(i => i.Id.Equals(equip.Wrist)).First();
-                    itemOld.Qtd += 1;
-                    equip.Wrist = 0;
-                    col.Update(itemOld);
-                    break;
-                case 5:
-                    itemOld = col.Query().Where(i => i.Id.Equals(equip.Hand)).First();
-                    itemOld.Qtd += 1;
-                    equip.Hand = 0;
-                    col.Update(itemOld);
-                    break;
-                case 6:
-                    itemOld = col.Query().Where(i => i.Id.Equals(equip.Legs)).First();
-                    itemOld.Qtd += 1;
-                    equip.Legs = 0;
-                    col.Update(itemOld);
-                    break;
-                case 7:
-                    itemOld = col.Query().Where(i => i.Id.Equals(equip.Feet)).First();
-                    itemOld.Qtd += 1;
-                    equip.Feet = 0;
-                    col.Update(itemOld);
-                    break;
-                case 8:
-                    itemOld = col.Query().Where(i => i.Id.Equals(equip.Cape)).First();
-                    itemOld.Qtd += 1;
-                    equip.Cape = 0;
-                    col.Update(itemOld);
-                    break;
-                case 9:
-                    itemOld = col.Query().Where(i => i.Id.Equals(equip.Belt)).First();
-                    itemOld.Qtd += 1;
-                    equip.Belt = 0;
-                    col.Update(itemOld);
-                    break;
-                case 10:
-                    itemOld = col.Query().Where(i => i.Id.Equals(equip.RightRing)).First();
-                    itemOld.Qtd += 1;
-                    equip.RightRing = 0;
-                    col.Update(itemOld);
-                    break;
-                case 11:
-                    itemOld = col.Query().Where(i => i.Id.Equals(equip.LeftRing)).First();
-                    itemOld.Qtd += 1;
-                    equip.LeftRing = 0;
-                    col.Update(itemOld);
-                    break;
-                case 12:
-                    itemOld = col.Query().Where(i => i.Id.Equals(equip.Neck)).First();
-                    itemOld.Qtd += 1;
-                    equip.Neck = 0;
-                    col.Update(itemOld);
-                    break;
-                case 13:
-                    itemOld = col.Query().Where(i => i.Id.Equals(equip.RightHand)).First();
-                    itemOld.Qtd += 1;
-                    equip.RightHand = 0;
-                    col.Update(itemOld);
-                    break;
-                case 14:
-                    itemOld = col.Query().Where(i => i.Id.Equals(equip.LeftHand)).First();
-                    itemOld.Qtd += 1;
-                    equip.LeftHand = 0;
-                    col.Update(itemOld);
-                    break;
-            }
-            equip.ReduceTotalMod(itemOld);
+            case 1: //HeadSlot
+                return new[] { 1 };
+            case 2: //BodySlot
+                return new[] { 2 };
+            case 3: //ShoulderSlot
+                return new[] { 3 };
+            case 4: //WristSlot
+                return new[] { 4 };
+            case 5: //HandSlot
+                return new[] { 5 };
+            case 6: //LegsSlot
+                return new[] { 6 };
+            case 7: //FeetSlot
+                return new[] { 7 };
+            case 8: //CapeSlot
+                return new[] { 8 };
+            case 9: //BeltSlot
+                return new[] { 9 };
+            case 10:
+            case 11: //RingSlot
+                return new[] { 11 };
+            case 12: //NeckSlot
+                return new[] { 12 };
+            case 13: //MainHandSlot
+                return new[] { 21, 22, 23, 33, 41, 42, 24, 25, 26, 27, 28, 31, 32, 34, 43 };
+            case 14: //OffHandSlot
+                return new[] { 13, 21, 22, 23, 33, 41, 42, 24, 25, 26, 27, 28, 31, 32, 34, 43 };
+            case 15: //TwoHanded
+                return new[] { 24, 25, 26, 27, 28, 31, 32, 34, 43 };
+            default:
+                return new int[] {};
         }
-        catch (System.InvalidOperationException)
-        {
-            Console.WriteLine("Já não há itens equipados neste espaço.");
-        }
-        db.Dispose();
     }
 
-    public static string DispayEquipment(InventoryController inventory, Equip equip, bool indexed = false)
+    public void ChangeEquip(Item item, int slot)
+    {
+        int type = (int)item.ItemType;
+
+        if (!GetSlotType(slot).Contains(type))
+            return;
+
+        if (GetSlotType(15).Contains(type))
+        {
+            RemoveEquip(13);
+            RemoveEquip(14);
+            SetEquipSlot(item, 13);
+        }
+        else
+        {
+            RemoveEquip(slot);
+            SetEquipSlot(item, slot);
+        }
+    }
+    public void RemoveEquip(int slot)
+    {
+
+        Item item = _getItem(GetEquipSlot(slot));
+        if (item == null)
+            return;
+        item.Qtd += 1;
+        SetEquipSlot(null, slot);
+        _equip.ReduceTotalMod(item);
+        _db.GetCollection<Item>(INVENTORY).Update(item);
+    }
+    public string DispayEquipment(bool indexed = false)
     {
         string returnString = "Equipamento:";
-        returnString += "\n\t" + (indexed ? "1: " : "") + "Cabeça: " + (equip.Head > 0 ? inventory.GetItem(equip.Head).Name : "vazio");
-        returnString += "\n\t" + (indexed ? "2: " : "") + "Corpo: " + (equip.Body > 0 ? inventory.GetItem(equip.Body).Name : "vazio");
-        returnString += "\n\t" + (indexed ? "3: " : "") + "Ombro: " + (equip.Shoulder > 0 ? inventory.GetItem(equip.Shoulder).Name : "vazio");
-        returnString += "\n\t" + (indexed ? "4: " : "") + "Pulso: " + (equip.Wrist > 0 ? inventory.GetItem(equip.Wrist).Name : "vazio");
-        returnString += "\n\t" + (indexed ? "5: " : "") + "Mãos: " + (equip.Hand > 0 ? inventory.GetItem(equip.Hand).Name : "vazio");
-        returnString += "\n\t" + (indexed ? "6: " : "") + "Pernas: " + (equip.Legs > 0 ? inventory.GetItem(equip.Legs).Name : "vazio");
-        returnString += "\n\t" + (indexed ? "7: " : "") + "Pés: " + (equip.Feet > 0 ? inventory.GetItem(equip.Feet).Name : "vazio");
-        returnString += "\n\t" + (indexed ? "8: " : "") + "Costas: " + (equip.Cape > 0 ? inventory.GetItem(equip.Cape).Name : "vazio");
-        returnString += "\n\t" + (indexed ? "9: " : "") + "Cintura: " + (equip.Belt > 0 ? inventory.GetItem(equip.Belt).Name : "vazio");
-        returnString += "\n\t" + (indexed ? "10: " : "") + "Anel Direito: " + (equip.RightRing > 0 ? inventory.GetItem(equip.RightRing).Name : "vazio");
-        returnString += "\n\t" + (indexed ? "11: " : "") + "Anel Esquerdo: " + (equip.LeftRing > 0 ? inventory.GetItem(equip.LeftRing).Name : "vazio");
-        returnString += "\n\t" + (indexed ? "12: " : "") + "Pescoço: " + (equip.Neck > 0 ? inventory.GetItem(equip.Neck).Name : "vazio");
-        returnString += "\n\t" + (indexed ? "13: " : "") + "Mão Direita: " + (equip.RightHand > 0 ? inventory.GetItem(equip.RightHand).Name : "vazio");
-        returnString += "\n\t" + (indexed ? "14: " : "") + "Mão Esquerda: " + (equip.LeftHand > 0 ? inventory.GetItem(equip.LeftHand).Name : "vazio");
+        returnString += "\n\t" + (indexed ? "1: " : "") + "Cabeça: " + (_equip.Head != 0 ? _getItem(_equip.Head).Name : "vazio");
+        returnString += "\n\t" + (indexed ? "2: " : "") + "Corpo: " + (_equip.Body != 0 ? _getItem(_equip.Body).Name : "vazio");
+        returnString += "\n\t" + (indexed ? "3: " : "") + "Ombro: " + (_equip.Shoulder != 0 ? _getItem(_equip.Shoulder).Name : "vazio");
+        returnString += "\n\t" + (indexed ? "4: " : "") + "Pulso: " + (_equip.Wrist != 0 ? _getItem(_equip.Wrist).Name : "vazio");
+        returnString += "\n\t" + (indexed ? "5: " : "") + "Mãos: " + (_equip.Hand != 0 ? _getItem(_equip.Hand).Name : "vazio");
+        returnString += "\n\t" + (indexed ? "6: " : "") + "Pernas: " + (_equip.Legs != 0 ? _getItem(_equip.Legs).Name : "vazio");
+        returnString += "\n\t" + (indexed ? "7: " : "") + "Pés: " + (_equip.Feet != 0 ? _getItem(_equip.Feet).Name : "vazio");
+        returnString += "\n\t" + (indexed ? "8: " : "") + "Costas: " + (_equip.Cape != 0 ? _getItem(_equip.Cape).Name : "vazio");
+        returnString += "\n\t" + (indexed ? "9: " : "") + "Cintura: " + (_equip.Belt != 0 ? _getItem(_equip.Belt).Name : "vazio");
+        returnString += "\n\t" + (indexed ? "10: " : "") + "Anel Direito: " + (_equip.RightRing != 0 ? _getItem(_equip.RightRing).Name : "vazio");
+        returnString += "\n\t" + (indexed ? "11: " : "") + "Anel Esquerdo: " + (_equip.LeftRing != 0 ? _getItem(_equip.LeftRing).Name : "vazio");
+        returnString += "\n\t" + (indexed ? "12: " : "") + "Pescoço: " + (_equip.Neck != 0 ? _getItem(_equip.Neck).Name : "vazio");
+        returnString += "\n\t" + (indexed ? "13: " : "") + "Mão Direita: " + (_equip.RightHand != 0 ? _getItem(_equip.RightHand).Name : "vazio");
+        returnString += "\n\t" + (indexed ? "14: " : "") + "Mão Esquerda: " + (_equip.LeftHand != 0 ? _getItem(_equip.LeftHand).Name : "vazio");
         return returnString;
+    }
+
+    private Item _getItem(int itemId)
+    {
+        try
+        {
+            return _db.GetCollection<Item>(INVENTORY).Query().Where(i => i.Id == itemId).First();
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
     }
 }

@@ -96,36 +96,30 @@ public class Value
 
     public override bool Equals(object? obj)
     {
-        return obj is Value value &&
-               Platinum == value.Platinum &&
-               Gold == value.Gold &&
-               Silver == value.Silver &&
-               Copper == value.Copper;
+        return obj is Value value
+               && Platinum == value.Platinum
+               && Gold == value.Gold
+               && Silver == value.Silver
+               && Copper == value.Copper;
     }
 
     public bool CompareTo(Value value)
     {
-        if (_platinum >= value.Platinum)
-            if (_gold >= value.Gold)
-                if (_silver >= value.Silver)
-                    if (_copper >= value.Copper)
-                        return true;
-                    else
-                        return false;
-                else
-                    return false;
-            else
-                return false;
+        if (_platinum >= value.Platinum
+            && _gold >= value.Gold
+            && _silver >= value.Silver
+            && _copper >= value.Copper)
+            return true;
         else
             return false;
     }
 
     public static Value GenerateValue(Random rng, int rarity, int quality)
     {
-        int platinum = Convert.ToInt32(rng.Next(1, 100000) > 90900 ? (0.0001 * rng.Next(rarity * quality)) : 0);
-        int gold = Convert.ToInt32(rng.Next(1, 10000) > 9090 ? (0.01 * rng.Next(rarity * quality)) : 0);
-        int silver = Convert.ToInt32(0.1 * rng.Next(Convert.ToInt32(rng.Next(rarity * quality))));
-        int copper = Convert.ToInt32(10 * (1 + rng.Next(Convert.ToInt32(rng.Next(rarity * quality)))));
+        int platinum = (int)(rng.Next(1, 100000) > 90900 ? (0.0001 * rng.Next(rarity * quality)) : 0);
+        int gold = (int)(rng.Next(1, 10000) > 9090 ? (0.01 * rng.Next(rarity * quality)) : 0);
+        int silver = (int)(0.1 * rng.Next((rng.Next(rarity * quality))));
+        int copper = (10 * (1 + rng.Next((rng.Next(rarity * quality)))));
         if (copper >= 100)
         {
             silver += copper / 100;

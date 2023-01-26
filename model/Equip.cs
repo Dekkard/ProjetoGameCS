@@ -1,8 +1,7 @@
-using static BaseController;
+using static BaseService;
 #pragma warning disable CS8602
 public class Equip
 {
-    private int _idHero;
     private int _head;
     private int _body;
     private int _shoulder;
@@ -20,7 +19,6 @@ public class Equip
 
     private Modifiers _equipMod;
 
-    public int IdHero { get => _idHero; set => _idHero = value; }
     public int Head { get => _head; set => _head = value; }
     public int Body { get => _body; set => _body = value; }
     public int Shoulder { get => _shoulder; set => _shoulder = value; }
@@ -39,7 +37,6 @@ public class Equip
 
     public Equip()
     {
-        _idHero = 0;
         _head = 0;
         _body = 0;
         _shoulder = 0;
@@ -57,9 +54,8 @@ public class Equip
         _equipMod = new Modifiers();
     }
 
-    public Equip(int idHero, int head, int body, int shoulder, int wrist, int hand, int legs, int feet, int cape, int belt, int rightRing, int leftRing, int neck, int rightHand, int leftHand, Modifiers equipMod)
+    public Equip(int head, int body, int shoulder, int wrist, int hand, int legs, int feet, int cape, int belt, int rightRing, int leftRing, int neck, int rightHand, int leftHand, Modifiers equipMod)
     {
-        _idHero = idHero;
         _head = head;
         _body = body;
         _shoulder = shoulder;

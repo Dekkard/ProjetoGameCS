@@ -13,7 +13,7 @@ public class Environment
 
     public Environment(string name, EnvType type, EnvTwistType typeTwist)
     {
-        _id = ObjectId.NewObjectId().Increment;
+        // _id = ObjectId.NewObjectId().Increment;
         _type = type;
         _typeTwist = typeTwist;
     }

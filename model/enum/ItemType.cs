@@ -2,6 +2,12 @@ public enum itemCategory
 {
     apparell = 1, Accessories, meleeWeapon, rangedWeapon, magicWeapons, Consumables, Material
 }
+public enum equipSlot{
+    head = 1, body, shoulder, wrist, hand, legs, feet, cape, belt, rightring, leftring, neck, righthand, lefthand
+}
+public enum equipSlot_pt{
+    cabeça = 1, corpo, ombros, pulsos, mãos, pernas, pe, capa, cinto, aneldireito, anelesquerdo, pescoço, mãodireita, mãoesquerda
+}
 public enum ItemType
 {
     // 1 - apparell = 0,

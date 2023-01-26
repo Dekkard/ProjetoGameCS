@@ -1,59 +1,29 @@
 using LiteDB;
 #pragma warning disable 8618
-public class Enemy : Status
+public class Enemy : Character
 {
-    private int _id;
     private int _iaLevel;
-    private string _name;
-    private int _level;
-    private int _hitpoints;
-    private int _manapoints;
     private EnemyType _enemyType;
-    private Equip _equipment;
-    private Value _riches;
 
-    public InventoryController inventory;
- 
-    public int Id { get => _id; set => _id = value; }
     public int IaLevel { get => _iaLevel; set => _iaLevel = value; }
-    public string Name { get => _name; set => _name = value; }
-    public int Level { get => _level; set => _level = value; }
-    public int Hitpoints { get => _hitpoints; set => _hitpoints = value; }
-    public int Manapoints { get => _manapoints; set => _manapoints = value; }
     public EnemyType EnemyType { get => _enemyType; set => _enemyType = value; }
-    public Equip Equipment { get => _equipment; set => _equipment = value; }
-    public Value Riches { get => _riches; set => _riches = value; }
 
-    // public Enemy()
-    // {
-    //     _id = ObjectId.NewObjectId().Increment;
-    //     _equipment = new Equip(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-    //     _riches = new Value(0, 0, 0, 0);
-    // }
-
-    public Enemy(int strength = 0, int perception = 0, int endurance = 0, int charisma = 0, int intelligence = 0, int agility = 0, int luck = 0) : base(strength, perception, endurance, charisma, intelligence, agility, luck)
+    public Enemy(int iaLevel, EnemyType enemyType, string nome = "", int level = 0, int reputation = 0, int karma = 0, int strength = 0, int perception = 0, int endurance = 0, int charisma = 0, int intelligence = 0, int agility = 0, int luck = 0) : base(nome, level, reputation, karma, strength, perception, endurance, charisma, intelligence, agility, luck)
     {
-        _id = ObjectId.NewObjectId().Increment;
-        _equipment = new Equip();
-        _riches = new Value(0, 0, 0, 0);
-        _hitpoints = 0;
-        _manapoints = 0;
+        _iaLevel = iaLevel;
+        _enemyType = enemyType;
     }
 
-    public Enemy(string name, int level, Equip equipment, Value riches, int strength, int perception, int endurance, int charisma, int intelligence, int agility, int luck) : base(strength, perception, endurance, charisma, intelligence, agility, luck)
+    public Enemy()
     {
-        _id = ObjectId.NewObjectId().Increment;
-        _name = name;
-        _level = level;
-        _equipment = equipment;
-        _riches = riches;
     }
-    public int AttackPoints()
+
+    public override int AttackPoints()
     {
         int ap = 0;
-        // Modifiers mod = Equipment.SumModifiers();
-        int str = Strength + Equipment.EquipMod.Str;
-        int agi = Agility + Equipment.EquipMod.Agi;
+        // Modifiers mod = Equip.SumModifiers();
+        int str = Strength + Equip.EquipMod.Str;
+        int agi = Agility + Equip.EquipMod.Agi;
         int attStatusMod = (str + agi) / 2;
         switch ((int)_enemyType)
         {
@@ -85,12 +55,12 @@ public class Enemy : Status
         return ap;
     }
 
-    public int DefencePoints()
+    public override int DefencePoints()
     {
         int dp = 0;
-        // Modifiers mod = Equipment.SumModifiers();
-        int str = Strength + Equipment.EquipMod.Str;
-        int agi = Agility + Equipment.EquipMod.Agi;
+        // Modifiers mod = Equip.SumModifiers();
+        int str = Strength + Equip.EquipMod.Str;
+        int agi = Agility + Equip.EquipMod.Agi;
         int defStatusMod = (str + agi) / 2;
         switch ((int)_enemyType)
         {
@@ -122,14 +92,14 @@ public class Enemy : Status
         return dp;
     }
 
-    public void TotalHitPoints()
+    public override int TotalHitPoints()
     {
         int hp = 0;
-        // Modifiers mod = Equipment.SumModifiers();
-        int end = Endurance + Equipment.EquipMod.End;
-        int str = Strength + Equipment.EquipMod.Str;
-        int agi = Agility + Equipment.EquipMod.Agi;
-        int hpStatusMod = (_level * 2) + end * 3 + (str + agi) / 2;
+        // Modifiers mod = Equip.SumModifiers();
+        int end = Endurance + Equip.EquipMod.End;
+        int str = Strength + Equip.EquipMod.Str;
+        int agi = Agility + Equip.EquipMod.Agi;
+        int hpStatusMod = (Level * 2) + end * 3 + (str + agi) / 2;
         switch ((int)_enemyType)
         {
             case 0:
@@ -157,15 +127,15 @@ public class Enemy : Status
                 hp = 100 + hpStatusMod;
                 break;
         }
-        _hitpoints = hp + Equipment.EquipMod.Hitpoints;
+        return Hitpoints = hp + Equip.EquipMod.Hitpoints;
     }
 
-    public void TotalManaPoints()
+    public override int TotalManaPoints()
     {
         int mp = 0;
-        // Modifiers mod = Equipment.SumModifiers();
-        int @int = Intelligence + Equipment.EquipMod.Int;
-        int manaStatusMod = (_level * 2) + @int;
+        // Modifiers mod = Equip.SumModifiers();
+        int @int = Intelligence + Equip.EquipMod.Int;
+        int manaStatusMod = (Level * 2) + @int;
         switch ((int)_enemyType)
         {
             case 0:
@@ -193,7 +163,7 @@ public class Enemy : Status
                 mp = 120 + manaStatusMod;
                 break;
         }
-        _manapoints = mp /* + Equipment.SumModifiers */;
+        return Manapoints = mp /* + Equipment.SumModifiers */;
     }
 
 }

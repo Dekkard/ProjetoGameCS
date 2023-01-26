@@ -1,266 +1,34 @@
 using LiteDB;
-using static BaseController;
+using System.Text.RegularExpressions;
+using static BaseService;
 #pragma warning disable 8600, 8602, 8603
 public class CityController
 {
-    public City CreateCity(int heroId, bool current, int level, int rarity, int quality)
+    public CityService cityService;
+    public ServiceService serviceService;
+    public ItemService itemService;
+    public HeroController _hero;
+    public CityController(LiteDatabase db, HeroController hero)
     {
-        City city = new City(heroId, current);
-        AssignCityConnections(city);
-        CreateServices(city, level, rarity, quality);
-        CreateWorks(city, level, rarity, quality);
-        AddCity(city);
+        this.cityService = new CityService(db);
+        this.serviceService = new ServiceService(db);
+        this.itemService = new ItemService(db, hero.Hero.Id);
+        _hero = hero;
+    }
+    public City CreateCity(Hero heroId, bool current, int level, int rarity, int quality)
+    {
+        City city = new City();
+        cityService.AssignCityConnections(city);
+        serviceService.CreateServices(city, level, rarity, quality);
+        cityService.CreateWorks(city, level, rarity, quality);
+        cityService.AddCity(city);
+        heroId.CurrentCity = city.Id;
         return city;
     }
 
-    public void AssignCityConnections(City city, bool ismsg = false)
+    public void CityServicesController(City city)
     {
-        Random rng = new Random();
-        int citySize = (int)city.Size;
-        int totalConn;
-        try
-        {
-            totalConn = rng.Next(1, (int)((citySize + 1) * 2.5) - city.Connections.Count);
-        }
-        catch (ArgumentOutOfRangeException)
-        {
-            return;
-        }
-        while (totalConn > 0)
-        {
-            City cityConn = new City(city.HeroId);
-            city.Connections.Add(cityConn.Id);
-            cityConn.Connections.Add(city.Id);
-            AddCity(cityConn);
-            totalConn--;
-            if (ismsg) Console.WriteLine("Conexão descoberta: " + cityConn.Name);
-        }
-    }
-
-    public void CreateServices(City city, int level, int rarity, int quality)
-    {
-        var db = new LiteDatabase("data.db");
-        var servColl = db.GetCollection<Services>(SERVICES);
-        var invColl = db.GetCollection<Item>(INVENTORY);
-
-        Random rng = new Random();
-        int totalServ = (int)city.Size;
-        while (totalServ > 0)
-        {
-            int cityService = rng.Next(Enum.GetValues(typeof(CityServices)).Length);
-            Services service = new Services(city.Id, Value.GenerateValue(rng, rarity, quality), (CityServices)cityService);
-            if (cityService >= 1)
-                CreateInventory(level, rarity, quality, invColl, rng, service);
-            servColl.Insert(service);
-            totalServ--;
-        }
-        db.Dispose();
-    }
-
-    public void CreateWorks(City city, int level, int rarity, int quality)
-    {
-        var db = new LiteDatabase(DATA);
-        var workColl = db.GetCollection<Works>(WORKS);
-
-        Random rng = new Random();
-        int totalWork = (int)city.Size * 3;
-        while (totalWork > 0)
-        {
-            int cityWorks = rng.Next(Enum.GetValues(typeof(CityWorks)).Length);
-            Works works = new Works(city.Id, Value.GenerateValue(rng, rarity, quality), (CityWorks)cityWorks);
-            workColl.Insert(works);
-            totalWork--;
-        }
-        db.Dispose();
-    }
-
-    private static void CreateInventory(int level, int rarity, int quality, ILiteCollection<Item> invColl, Random rng, Services service)
-    {
-        int quantity = rng.Next(rarity);
-        for (int i = 1; i <= quantity; i++)
-        {
-            Item item;
-            switch ((int)service.CityServices)
-            {
-                /* case 1:
-                    item = InventoryController.GerarItem(service.Id, level - 5, level + 5, rarity, quality);
-                    break; */
-                case 2:
-                    int[] itemMer = { 51, 52, 55 };
-                    item = InventoryController.GerarItem(service.Id, level - 5, level + 5, rarity, quality, itemMer[rng.Next(itemMer.Length)]);
-                    break;
-                case 3:
-                    int[] itemArm = { 13, 21, 22, 23, 24, 25, 26, 27, 28, 54, 61, 64, 65, 66 };
-                    item = InventoryController.GerarItem(service.Id, level - 5, level + 5, rarity, quality, itemArm[rng.Next(itemArm.Length)]);
-                    break;
-                case 4:
-                    int[] itemAlq = { 52, 53, 62, 68, 69 };
-                    item = InventoryController.GerarItem(service.Id, level - 5, level + 5, rarity, quality, itemAlq[rng.Next(itemAlq.Length)]);
-                    break;
-                case 5:
-                    int[] itemRag = { 31, 32, 33, 34, 61 };
-                    item = InventoryController.GerarItem(service.Id, level - 5, level + 5, rarity, quality, itemRag[rng.Next(itemRag.Length)]);
-                    break;
-                case 6:
-                    int[] itemMag = { 41, 42, 43, 52, 69 };
-                    item = InventoryController.GerarItem(service.Id, level - 5, level + 5, rarity, quality, itemMag[rng.Next(itemMag.Length)]);
-                    break;
-                default:
-                    item = InventoryController.GerarItem(service.Id, level - 5, level + 5, rarity, quality);
-                    break;
-            }
-            invColl.Insert(item);
-        }
-    }
-
-    public void UpdateInventory(int level, int rarity, int quality, ILiteCollection<Item> invColl, Random rng, Services service)
-    {
-        List<Item> inventory = invColl.Query().Where(inv => inv.ownerId.Equals(service.Id)).ToList();
-        if (inventory.Count == 0)
-            CreateInventory(level, rarity, quality, invColl, rng, service);
-    }
-
-    public void AddCity(City city)
-    {
-        var db = new LiteDatabase("data.db");
-        var col = db.GetCollection<City>(CITIES);
-        // City city = new City();
-        // city.AssignCityServices();
-        // city.AssignCityWorks();
-        // city.AssignCityConnections();
-        col.Insert(city);
-        db.Dispose();
-    }
-
-    public City GetCity(int id)
-    {
-        var db = new LiteDatabase("data.db");
-        var col = db.GetCollection<City>(CITIES);
-        City city;
-        try
-        {
-            city = col.Query().Where(c => c.Id.Equals(id)).First();
-            db.Dispose();
-            return city;
-        }
-        catch (System.InvalidOperationException)
-        {
-            Console.WriteLine("Cidade não consta no registro");
-            db.Dispose();
-            return null;
-        }
-    }
-
-    public void SaveCity(City city)
-    {
-        var db = new LiteDatabase("data.db");
-        var col = db.GetCollection<City>(CITIES);
-        col.Update(city);
-        db.Dispose();
-    }
-
-    public void DeleteCity(City city)
-    {
-        var db = new LiteDatabase("data.db");
-        var col = db.GetCollection<City>(CITIES);
-        foreach (int cityConnId in city.Connections)
-        {
-            removeCityConnectionRegistry(GetCity(cityConnId), city.Id);
-        }
-        col.Delete(city.Id);
-        db.Dispose();
-    }
-
-    public void removeCityConnectionRegistry(City city, int cityConnId)
-    {
-        city.Connections.Remove(cityConnId);
-        SaveCity(city);
-    }
-
-    public City GetCurrentCity(int heroId)
-    {
-        var db = new LiteDatabase("data.db");
-        var col = db.GetCollection<City>(CITIES);
-        City city;
-        try
-        {
-            city = col.Query().Where(c => c.HeroId.Equals(heroId) || c.IsCurrent).First();
-            db.Dispose();
-            return city;
-        }
-        catch (System.InvalidOperationException)
-        {
-            Console.WriteLine("Cidade não consta no registro");
-            return null;
-        }
-    }
-
-    public List<City> GetCities(int heroId)
-    {
-        var db = new LiteDatabase("data.db");
-        var col = db.GetCollection<City>(CITIES);
-        List<City> city = col.Query().Where(c => c.HeroId.Equals(heroId)).ToList();
-        db.Dispose();
-        return city;
-    }
-
-    public Services GetServices(int id)
-    {
-        var db = new LiteDatabase("data.db");
-        var col = db.GetCollection<Services>(SERVICES);
-        Services service;
-        try
-        {
-            service = col.Query().Where(c => c.Id.Equals(id)).First();
-            db.Dispose();
-            return service;
-        }
-        catch (System.InvalidOperationException)
-        {
-            Console.WriteLine("Cidade não consta no registro");
-            return null;
-        }
-    }
-
-    public List<Services> GetServicesList(int cityId)
-    {
-        var db = new LiteDatabase("data.db");
-        var col = db.GetCollection<Services>(SERVICES);
-        List<Services> ListServices = col.Query().Where(s => s.CityId.Equals(cityId)).ToList();
-        db.Dispose();
-        return ListServices;
-    }
-
-    public Works GetWork(int id)
-    {
-        var db = new LiteDatabase(DATA);
-        var col = db.GetCollection<Works>(WORKS);
-        Works work;
-        try
-        {
-            work = col.Query().Where(w => w.Id.Equals(id)).First();
-            db.Dispose();
-            return work;
-        }
-        catch (System.InvalidOperationException)
-        {
-            Console.WriteLine("Trabalho não consta no registro");
-            return null;
-        }
-    }
-
-    public List<Works> GetWorkList(int cityId)
-    {
-        var db = new LiteDatabase(DATA);
-        var col = db.GetCollection<Works>(WORKS);
-        List<Works> ListWorks = col.Query().Where(w => w.CityId.Equals(cityId)).ToList();
-        db.Dispose();
-        return ListWorks;
-    }
-
-    public void CityServicesController(City city, Hero hero)
-    {
-        List<Services> ListServices = GetServicesList(city.Id);
+        List<Services> ListServices = cityService.GetServicesList(city);
         if (ListServices.Count == 0)
         {
             Console.WriteLine("Esta cidade não oferece serviço algum.");
@@ -274,45 +42,34 @@ public class CityController
             Console.WriteLine(servIndex + ": " + cityServices.CityServices + "[" + (int)cityServices.CityServices + "]");
             servDic.Add(servIndex++, cityServices);
         }
-        Console.WriteLine(servDic.Count);
-        Console.WriteLine("Escolha o serviço que deseja utilizar");
-        string opt;
-        Services service;
-        while (true)
-        {
-            try
-            {
-                opt = OptRead("Deve-se escolher uma opção");
-                if (new[] { "voltar", "cancelar", "volta", "return", "back", "can" }.Contains(opt))
+
+        Services service = new Services();
+        bool serviceSelectorCancel = false;
+
+        OptionInterface("Escolha o serviço que deseja utilizar",
+            new Option((o) =>
                 {
-                    return;
-                }
-                try
-                {
-                    service = servDic[int.Parse(opt)];
-                }
-                catch (FormatException)
-                {
-                    service = servDic.Values.ToList().Find(s => s.CityServices.Equals(Enum.GetName(typeof(CityServices), opt)));
-                }
-            }
-            catch (System.ArgumentNullException)
-            {
-                Console.WriteLine("Serviço não compreende na lista.");
-                continue;
-            }
-            catch (KeyNotFoundException)
-            {
-                Console.WriteLine("Serviço não compreende na lista.");
-                continue;
-            }
-            catch (System.NullReferenceException)
-            {
-                Console.WriteLine("Serviço não compreende na lista.");
-                continue;
-            }
-            break;
-        }
+                    try
+                    {
+                        if (new Regex(@"\d+").IsMatch(o))
+                            service = servDic[int.Parse(o)];
+                        else
+                            service = servDic.Values.ToList()
+                                .Find(s => s.CityServices.Equals(Enum.GetName(typeof(CityServices), o)));
+                    }
+                    catch (Exception e) when (e is ArgumentNullException
+                                            | e is KeyNotFoundException
+                                            | e is NullReferenceException)
+                    {
+                        Console.WriteLine("Serviço não compreende na lista.");
+                        return true;
+                    }
+                    return false;
+                }, "Serviço", new Regex(@"\d+")),
+            new Option((o) => serviceSelectorCancel = true, false, "Voltar", returnOption)
+        );
+        if (serviceSelectorCancel) return;
+
         switch ((int)service.CityServices)
         {
             case 0:
@@ -322,7 +79,7 @@ public class CityController
                 {
                     try
                     {
-                        days = int.Parse(OptRead("Deve-se escolher quantos dias."));
+                        days = int.Parse(BWrite("Deve-se escolher quantos dias."));
                         if (days < 1)
                         {
                             Console.WriteLine("Escolha outra quantidade.");
@@ -335,193 +92,328 @@ public class CityController
                         Console.WriteLine("Quantidade inválida");
                     }
                 }
-                Estaleiro(hero, days);
+                cityService.Estaleiro(days, _hero.Hero);
                 break;
             case 1:
+                StoreInterface(service);
+                break;
             case 2:
+                StoreInterface(service, 51, 52, 55);
+                break;
             case 3:
+                StoreInterface(service, 13, 21, 22, 23, 24, 25, 26, 27, 28, 54, 61, 64, 65, 66);
+                break;
             case 4:
-                service.inventory = new InventoryController(service.Id);
-                List<Item> lojaList = service.inventory.GetInv();
-                Dictionary<int, Item> lojaDic = new Dictionary<int, Item>();
-                int index = 1;
-                foreach (Item item in lojaList)
-                {
-                    lojaDic.Add(index++, item);
-                }
-                LojaInterface(lojaDic, hero);
+                StoreInterface(service, 52, 53, 62, 68, 69);
+                break;
+            case 5:
+                StoreInterface(service, 31, 32, 33, 34, 61);
+                break;
+            case 6:
+                StoreInterface(service, 41, 42, 43, 52, 69);
                 break;
         }
     }
 
-    public void Estaleiro(Hero hero, int days)
+    public void StoreInterface(Services service, params int[] allowedItemType)
     {
-        Value serviceCost = new Value(0, 0, 0, 20);
-        Random rng = new Random();
-        int serviceQuality = rng.Next(1, hero.RarityModifier()) % 100;
 
-        serviceCost *= (int)(hero.Level * 0.5) * days * (serviceQuality / 10);
-
-        if (hero.Riches.CompareTo(serviceCost))
-        {
-            hero.Riches -= serviceCost;
-
-            hero.Energypoints += serviceQuality * days;
-            hero.Energypoints = hero.Energypoints > hero.TotalEnergyPoints() ? hero.TotalEnergyPoints() : hero.Energypoints;
-
-            hero.Hitpoints += serviceQuality * days * 2;
-            hero.Hitpoints = hero.Hitpoints > hero.TotalHitPoints() ? hero.TotalHitPoints() : hero.Hitpoints;
-
-            hero.Manapoints += serviceQuality * days * 2;
-            hero.Manapoints = hero.Manapoints > hero.TotalManaPoints() ? hero.TotalManaPoints() : hero.Manapoints;
-        }
-        else
-        {
-            Console.Write("Fundos insuficientes para utilizar as hospedagens");
-        }
+        itemService.changeCaracter(service.Vendor);
+        OptionInterface("Deseja comprar ou vender?", "Escolha um opção",
+            new Option((o) =>
+                {
+                    List<Item> storeList = itemService.GetInv();
+                    // List<Item> storeList = service.Inventory.Select(iv => itemService.GetItemById(iv)).ToList();
+                    Dictionary<int, Item> storeDic = new Dictionary<int, Item>();
+                    int index = 1;
+                    foreach (Item item in storeList)
+                        storeDic.Add(index++, item);
+                    StoreBuyInterface(storeDic, _hero.Hero.Riches);
+                }, true
+                , "Comprar: Acessa a loja e selecione os item que deseja adquirir"
+                , "comprar", "compra", "buy", "c", "b"),
+            new Option((o) =>
+                {
+                    List<Item> heroInv = _hero.heroInventoryController.Inventory.GetInv();
+                    if (allowedItemType.Length > 0)
+                        heroInv = heroInv.Where(i => allowedItemType.Contains((int)i.ItemType)).ToList();
+                    int index = 1;
+                    Dictionary<int, Item> inventory = heroInv.ToDictionary(v => index++, item => item);
+                    StoreSellInterface(inventory, service.Riches);
+                }, true
+                , "Vender: Seleciona os items do seu inventário para vender"
+                , "vender", "vende", "sell", "v", "s"),
+            new Option((o) => false
+                , "Voltar: retorna à interação anterior"
+                , returnOption)
+        );
     }
 
-    public void LojaInterface(Dictionary<int, Item> loja, Hero hero)
+    public void StoreBuyInterface(Dictionary<int, Item> store, Value pValue)
     {
-        foreach (int index in loja.Keys)
-        {
-            Console.WriteLine(index + ": " + loja[index].ToString());
-        }
         List<Item> cart = new List<Item>();
         Value total = new Value(0, 0, 0, 0);
-        Console.WriteLine("Escolha os itens que deseja adquirir, digite 'fechar' para terminar compra.");
-        while (true)
-        {
-            try
-            {
-                string opt2 = OptRead("Escolha um item");
-                if (new[] { "fechar", "close", "ok", "okay", "f" }.Contains(opt2.ToLower()))
-                {
-                    if (hero.Riches.CompareTo(total))
-                        break;
-                    else
-                    {
-                        Console.WriteLine("Fundos insuficientes. Faça uma nova seleção");
-                        cart.Clear();
-                        continue;
-                    }
-                }
-                else if (new[] { "voltar", "cancelar", "volta", "return", "back", "can" }.Contains(opt2.ToLower()))
-                {
-                    Console.WriteLine("Transação cancelada");
-                    return;
-                }
-                try
-                {
-                    Item item = loja[int.Parse(opt2)];
-                    total += item.Value;
-                    cart.Add(item);
-                }
-                catch (FormatException)
+        Console.WriteLine(pValue + ": total " + total);
+        Console.WriteLine(store
+            .Select(v => v.Key + ": " + v.Value)
+            .Aggregate((v1, v2) => v1 + "\n" + v2));
+        bool cancelService = false;
+        OptionInterface("Escolha os itens que deseja adquirir",
+            new Option((o) =>
                 {
                     try
                     {
-                        Item item = loja.Values.ToList().Find(i => i.Name.Equals(opt2));
+                        Item item;
+                        int index;
+                        Regex rNumber = new Regex(@"\d+");
+                        if (rNumber.IsMatch(o))
+                        {
+                            index = int.Parse(o);
+                            item = store[index];
+                        }
+                        else
+                        {
+                            var val = store.ToList().Find(i => i.Value.Name.Equals(o));
+                            index = val.Key;
+                            item = val.Value;
+                        }
                         total += item.Value;
                         cart.Add(item);
+                        store.Remove(index);
+                        store = store.ToDictionary(v => v.Key > index ? v.Key - 1 : v.Key, v => v.Value);
+                        if (store.Count >= 1)
+                            Console.WriteLine(store
+                            .Select(v => v.Key + ": " + v.Value)
+                            .Aggregate((v1, v2) => v1 + "\n" + v2));
+                        else
+                            Console.WriteLine("Loja vazia");
+                        return true;
                     }
-                    catch (System.NullReferenceException)
+                    catch (Exception e) when (e is ArgumentNullException
+                                            | e is KeyNotFoundException
+                                            | e is NullReferenceException
+                                            | e is InvalidOperationException)
                     {
                         Console.WriteLine("Item não encontrado.");
-                        continue;
+                        return true;
                     }
                 }
-            }
-            catch (System.ArgumentNullException)
-            {
-                Console.WriteLine("Item não encontrado.");
-                continue;
-            }
-            catch (KeyNotFoundException)
-            {
-                Console.WriteLine("Item não encontrado.");
-                continue;
-            }
-
-        }
-        if (cart.Count > 0)
-        {
-
-            foreach (Item ic in cart)
-            {
-                Console.WriteLine(ic.Name);
-
-            }
-            while (true)
-            {
-                Console.WriteLine("Comfirmar compra?");
-                string opt = OptRead("Sim ou não.");
-                if (new[] { "sim", "s", "yes", "y" }.Contains(opt.ToLower()))
+                , ""
+                , new Regex(@"\d+")),
+            new Option((o) => cart.ForEach(i => Console.WriteLine(i))
+                , true
+                , "lista: Listar itens a serem comprados"
+                , "lista", "listar", "list", "ls"),
+            new Option((o) => Console.WriteLine(pValue + ": total " + total + "\n" +
+                (store.Count > 0 ? store
+                    .Select(v => v.Key + ": " + v.Value)
+                    .Aggregate((v1, v2) => v1 + "\n" + v2) : "Loja vazia"))
+                , true
+                , "loja: mostra itens disponíveis na loja"
+                , "loja", "store", "lo", "st"),
+            new Option((o) =>
                 {
-                    foreach (Item ic in cart)
+                    if (!_hero.Hero.Riches.CompareTo(total))
                     {
-                        hero.inventory.AddItem(ic);
-                        hero.Riches -= ic.Value;
+                        Console.WriteLine("Fundos insuficientes. Faça uma nova seleção");
+                        cart.ForEach(i => store.Add(store.Count + 1, i));
+                        total = new Value(0, 0, 0, 0);
+                        cart.Clear();
+                        return true;
                     }
+                    return false;
                 }
-                else if (new[] { "não", "nao", "n", "no" }.Contains(opt.ToLower()))
-                    break;
-            }
+                , "Fechar: completar pedido"
+                , "fechar", "close", "ok", "okay", "f"),
+            new Option((o) =>
+                {
+                    Console.WriteLine("Transação cancelada");
+                    cancelService = true;
+                }, false
+                , "Cancelar: cancelar pedido"
+                , returnOption)
+        );
+        if (cart.Count <= 0 || cancelService) return;
+
+        foreach (Item ic in cart)
+        {
+            Console.WriteLine(ic.Name);
+
         }
+
+        OptionInterface("Comfirmar compra?",
+            new Option((o) =>
+                {
+                    cart.ForEach(i => _hero.heroInventoryController.AddItem(i));
+                    _hero.Hero.Riches -= total;
+                }, false
+                , "Sim"
+                , posResp),
+            new Option((o) => true
+                , "Não"
+                , negResp)
+        );
     }
-    public void CityWorksController(City city, Hero hero)
+
+    public void StoreSellInterface(Dictionary<int, Item> inventory, Value vValue)
     {
-        var db = new LiteDatabase(DATA);
-        var col = db.GetCollection<Works>(WORKS);
-        List<Works> listWorks = col.Query().Where(w => w.CityId.Equals(city.Id)).ToList();
-        Dictionary<int, Works> cwDict = new Dictionary<int, Works>();
-        int index = 1;
-        Console.WriteLine("Qual destas opções deseja trabalhar?");
-        foreach (Works w in listWorks)
-        {
-            Console.WriteLine(index + ": " + (CityWorks)w.CityWorks);
-            cwDict.Add(index, w);
-        }
-        Works work;
-        while (true)
-        {
-            try
-            {
-                string opt1 = OptRead("Escolha uma opção.");
-                if (new[] { "voltar", "cancelar", "volta", "return", "back", "can" }.Contains(opt1.ToLower()))
-                {
-                    return;
-                }
-                try
-                {
-                    work = cwDict[int.Parse(opt1)];
-                    break;
-                }
-                catch (FormatException)
+        List<Item> cart = new List<Item>();
+        Value total = new Value(0, 0, 0, 0);
+        Console.WriteLine(vValue + ": total " + total);
+        Console.WriteLine(inventory
+            .Select(v => v.Key + ": " + v.Value)
+            .Aggregate((v1, v2) => v1 + "\n" + v2));
+        bool cancelService = false;
+        OptionInterface("Escolha os itens que deseja vender",
+            new Option((o) =>
                 {
                     try
                     {
-                        work = cwDict.Values.ToList().Find(w => w.CityWorks.Equals(opt1));
-                        break;
+                        Item item;
+                        int index;
+                        Regex rNumber = new Regex(@"\d+");
+                        if (rNumber.IsMatch(o))
+                        {
+                            index = int.Parse(o);
+                            item = inventory[index];
+                        }
+                        else
+                        {
+                            var val = inventory.ToList().Find(i => i.Value.Name.Equals(o));
+                            index = val.Key;
+                            item = val.Value;
+                        }
+                        total += item.Value;
+                        cart.Add(item);
+                        inventory.Remove(index);
+                        inventory = inventory.ToDictionary(v => v.Key > index ? v.Key - 1 : v.Key, v => v.Value);
+                        if (inventory.Count > 0)
+                            Console.WriteLine(inventory
+                            .Select(v => v.Key + ": " + v.Value)
+                            .Aggregate((v1, v2) => v1 + "\n" + v2));
+                        else
+                            Console.WriteLine("Inventário vazio");
+                        return true;
                     }
-                    catch (System.NullReferenceException)
+                    catch (Exception e) when (e is ArgumentNullException
+                                            | e is KeyNotFoundException
+                                            | e is NullReferenceException
+                                            | e is InvalidOperationException)
                     {
-                        Console.WriteLine("Opção não encontrada.");
-                        continue;
+                        Console.WriteLine("Item não encontrado.");
+                        return true;
                     }
                 }
-            }
-            catch (System.ArgumentNullException)
-            {
-                Console.WriteLine("Opção não encontrada.");
-                continue;
-            }
-            catch (KeyNotFoundException)
-            {
-                Console.WriteLine("Opção não encontrada.");
-                continue;
-            }
+                , ""
+                , new Regex(@"\d+")),
+            new Option((o) =>
+                {
+                    if (cart.Count > 0)
+                        cart.ForEach(i => Console.WriteLine(i));
+                    else
+                        Console.WriteLine("lista vazia");
+                }
+                , true
+                , "lista: Listar itens a serem vendidos"
+                , "lista", "listar", "list", "ls"),
+            new Option((o) => Console.WriteLine(vValue + ": total " + total + "\n" + (inventory.Count > 0 ? inventory
+                        .Select(v => v.Key + ": " + v.Value)
+                        .Aggregate((v1, v2) => v1 + "\n" + v2) : "inventário vazio"))
+                , true
+                , "Inventário: mostra itens disponíveis no inventario"
+                , "inventario", "inventary", "inv", "i"),
+            new Option((o) =>
+                {
+                    if (!vValue.CompareTo(total))
+                    {
+                        Console.WriteLine("Fundos insuficientes. Faça uma nova seleção");
+                        cart.ForEach(i => inventory.Add(inventory.Count + 1, i));
+                        total = new Value(0, 0, 0, 0);
+                        cart.Clear();
+                        return true;
+                    }
+                    return false;
+                }
+                , "Fechar: completar pedido"
+                , "fechar", "close", "ok", "okay", "f"),
+            new Option((o) =>
+                {
+                    Console.WriteLine("Transação cancelada");
+                    cancelService = true;
+                    return false;
+                }
+                , "Cancelar: cancelar pedido"
+                , returnOption)
+        );
+        if (cart.Count <= 0 || cancelService) return;
+
+        foreach (Item ic in cart)
+        {
+            Console.WriteLine(ic.Name);
+
         }
+
+        OptionInterface("Comfirmar venda?",
+            new Option((o) =>
+                {
+                    cart.ForEach(i => itemService.changeItemOwnership(i));
+                    _hero.Hero.Riches += total;
+                }, false
+                , "Sim"
+                , posResp),
+            new Option((o) => true
+                , "Não"
+                , negResp)
+        );
+    }
+
+    public void CityWorksController(City city)
+    {
+        var col = cityService.db.GetCollection<Work>(WORKS);
+        List<Work> listWorks = col.Query().Where(w => w.City.Equals(city)).ToList();
+        Dictionary<int, Work> cwDict = new Dictionary<int, Work>();
+        int index = 1;
+        foreach (Work w in listWorks)
+        {
+            Console.WriteLine(index + ": " + (CityWorks)w.CityWorks);
+            cwDict.Add(index++, w);
+        }
+        Work work = new Work();
+        bool workCancel = false;
+        OptionInterface("Em qual destas opções deseja trabalhar?",
+            new Option((o) =>
+                {
+                    try
+                    {
+                        work = cwDict[int.Parse(o)];
+                    }
+                    catch (FormatException)
+                    {
+                        try
+                        {
+                            work = cwDict.Values.ToList().Find(w => w.CityWorks.Equals(o));
+                        }
+                        catch (NullReferenceException)
+                        {
+                            Console.WriteLine("Opção não encontrada.");
+                            return true;
+                        }
+                    }
+                    catch (Exception e) when (e is ArgumentNullException | e is KeyNotFoundException)
+                    {
+                        Console.WriteLine("Opção não encontrada.");
+                        return true;
+                    }
+                    return true;
+                }
+                , ""
+                , cwDict.Keys.Select(k => k.ToString()).ToArray()),
+            new Option((o) => !(workCancel = true)
+                , "Voltar: cancelar escolha"
+                , returnOption)
+        );
+        if (workCancel) return;
+
         // Trabalho está relacionado aos atributos do herói, com isso, quando um trabalho é bem executado um ponto é adicionado ao atributo relacionado. Dependendo do trabalho, mais de um atributo é involvido.
         // Mineirador: Força e Resistência
         // Ferreiro: Força, Resistência e Percepção
@@ -543,44 +435,39 @@ public class CityController
         {
             case 0:
                 Console.WriteLine("As minas abertas aos arredores da " + ((TamanhoCidade)city.Size).ToString().ToLower() + " contribuem para o fornecimento de alguns metais e carvão para região. Trabalhar aqui exigirá muito do seu físico, a cada golpe de sua ferramenta irá drenar suas energias com grande facilidade se não o fizer com cuidado, porém, seus esforçor podem lhe render um bom dinheiro se fizer seu trabalho corretamente. Deseja continuar?");
-                while (true)
-                {
-                    string opt2 = OptRead("Sim ou não.").ToLower();
-                    if (new[] { "não", "no", "nao", "n" }.Contains(opt2))
-                    {
-                        return;
-                    }
-                    else if (new[] { "sim", "yes", "s", "y" }.Contains(opt2))
-                        break;
-                    else Console.WriteLine("Sim ou não");
-                }
+                bool startWork = false;
+                OptionInterface("Começar aventura agora?", "Sim ou não.",
+                    new Option((o) => !(startWork = true), "Sim", posResp),
+                    new Option((o) => false, "Não", negResp)
+                );
+                if (!startWork) return;
                 if (rng.Next(20) > 15)
                 {
                     switch (rng.Next(1, 10))
                     {
                         case 1:
-                            Item gem = InventoryController.GerarItem(hero.Id, hero.Level - 5, hero.Level + 10, hero.RarityModifier(), hero.QualityModifier(), 64);
+                            Item gem = InventoryController.GerarItem(_hero.Hero.Id, _hero.Hero.Level - 5, _hero.Hero.Level + 10, _hero.Hero.RarityModifier(), _hero.Hero.QualityModifier(), 64);
                             Console.WriteLine("Durante suas minerações você encontra uma " + gem.Name + ". Como foi lhe dito no começo da sua empreitada, tudo e qualquer coisa que for encontrada na mina é de propriedade de " + city.Name + ", então, naturalmente, você deve entregar a jóia para os guardas. Entretanto, ninguém percebeu que você encontrou uma " + gem.Name + ", se você conseguir oculta-lá e sair dali é possível fazer um bom dinheiro com ela, apesar de o correto ser entrega-lá para os proprietários, apesar de sua recompensa ser bem menor que o valor da jóia. Qual a sua decisão?");
                             Console.WriteLine("1: Entrega-lá.");
                             Console.WriteLine("2: Ficar com " + gem.Name + ".");
                             while (true)
                             {
-                                string opt3 = OptRead("Faça sua escolha").ToLower();
+                                string opt3 = BWrite("Faça sua escolha").ToLower();
                                 if (new[] { "1", "deliver", "entregar" }.Contains(opt3))
                                 {
                                     Console.WriteLine("Você decide que o correto é entregar a jóia para as autoridades, outros usos podem ser feitos com a pedra do que seus próprios ganhos pessoais. Ao entregar para o chefe da mina, ele lhe agradece e lhe entrega uma quantia do dinheiro.");
                                     richies += gem.Value / 5;
-                                    hero.Karma += 5;
-                                    hero.Reputation += 5;
+                                    _hero.Hero.Karma += 5;
+                                    _hero.Hero.Reputation += 5;
                                     break;
                                 }
                                 else if (new[] { "2", "keep", "ficar" }.Contains(opt3))
                                 {
                                     Console.WriteLine("Você decide ficar com a " + gem.Name + ". Você olha para o lados, certificando se alguém está olhando, e coloca jóia no seu bolso...");
-                                    hero.Karma -= 5;
+                                    _hero.Hero.Karma -= 5;
                                     Thread.Sleep(2000);
                                     eOutcome = rng.Next(100);
-                                    if (eOutcome > 60 - (hero.Agility + hero.Perception))
+                                    if (eOutcome > 60 - (_hero.Hero.Agility + _hero.Hero.Perception))
                                     {
                                         Console.WriteLine("... e niguém se quer percebeu o que você fez. ");
                                         listGoodsFound.Add(gem);
@@ -589,7 +476,7 @@ public class CityController
                                     else
                                     {
                                         Console.Write("... um dos trabalhadores notou algo brilhante em suas mãos, ");
-                                        if (rng.Next(100) > 70 - hero.Perception)
+                                        if (rng.Next(100) > 70 - _hero.Hero.Perception)
                                         {
                                             Console.WriteLine("você percebeu suas intenções, e antes que ele pudesse avisar qualquer um, você tomou uma atitude.");
                                             Console.WriteLine("1: Raciocinar.");
@@ -598,22 +485,22 @@ public class CityController
                                             Console.WriteLine("4: Esconder a jóia.");
                                             while (true)
                                             {
-                                                string opt4 = OptRead("Faça sua escolha.").ToLower();
+                                                string opt4 = BWrite("Faça sua escolha.").ToLower();
                                                 switch (opt4)
                                                 {
                                                     case "1":
                                                     case "racioncinar":
                                                     case "reason":
                                                         Console.WriteLine("Você se aproxima do trabalhador, tenta convencer ele de que a jóia já era sua, e só tinha pegado ela para lhe dar sorte.");
-                                                        if (rng.Next(100) > 80 - hero.PersuasionPoints())
+                                                        if (rng.Next(100) > 80 - _hero.Hero.PersuasionPoints())
                                                         {
                                                             Console.WriteLine("Ele acreditou, dizendo que achava ter visto você encontrando a pedra. Ele se desculpa, você diz que está tudo bem, os dois voltam para o que estavam fazendo.");
                                                             listGoodsFound.Add(gem);
                                                         }
                                                         else
                                                         {
-                                                            Console.WriteLine("Ele não acredita nessa mentira, correndo até os dois guardas que estavam ali perto, que vão em sua direção, já demandando que lhe mostrem a jóia. Os guardas te revistam, encontrando uma " + gem.Name + ". Os guardas lhe deram uma surra e então o jogaram para fora da mina, nenhum de seus esforços na mina lhe renderam nada.");
-                                                            MinerFailEvent(hero, rng);
+                                                            Console.WriteLine("Ele não acredita nessa mentira, correndo até os dois guardas que estavam ali perto, que vão em sua direção, já demandando que lhe mostrem a jóia. Os guardas te revistam, encontrando uma " + gem.Name + ". Os guardas lhe deram uma surra e então o jogaram para fora da mina, seus esforços na mina lhe renderam nada.");
+                                                            MinerFailEvent(rng);
                                                             return;
                                                         }
                                                         break;
@@ -621,11 +508,11 @@ public class CityController
                                                     case "negociar":
                                                     case "negociate":
                                                         Console.Write("Você fala com o trabalhador que, de fato, encontrou uma jóia e está disposto a negociar um acordo para seu silêncio. ");
-                                                        if (rng.Next(100) > 50 - hero.PersuasionPoints())
+                                                        if (rng.Next(100) > 50 - _hero.Hero.PersuasionPoints())
                                                         {
                                                             int prt = rng.Next(2, 6);
                                                             Console.WriteLine("O trabalhador, ao observar a pedra, pede " + (prt == 2 ? "pela metade" : (prt == 3 ? "por dois terços" : (prt == 4 ? "por três quartos" : "por quatro quintos"))) + " do valor da " + gem.Name + ". Você aceita a contra-oferta do trabalhador?");
-                                                            string opt6 = OptRead("Faça sua escolha").ToLower();
+                                                            string opt6 = BWrite("Faça sua escolha").ToLower();
                                                             if (new[] { "sim", "s", "yes", "y" }.Contains(opt6))
                                                             {
                                                                 Console.WriteLine("Relutantemente você aceita a oferta dele, discretamente passando a jóia para o trabalhador, que lhe passa uma parte do dinheiro.");
@@ -633,11 +520,11 @@ public class CityController
                                                             }
                                                             else if (new[] { "não", "nao", "no", "n" }.Contains(opt6))
                                                             {
-                                                                if (rng.Next(100) > 60 - hero.PersuasionPoints() || prt != 2)
+                                                                if (rng.Next(100) > 60 - _hero.Hero.PersuasionPoints() || prt != 2)
                                                                 {
                                                                     prt = rng.Next(2, prt);
                                                                     Console.WriteLine("Você tenta renegociar a partição, ele meio que entende, refaz sua oferta, agora ele pede " + (prt == 2 ? "pela metade" : (prt == 3 ? "por dois terços" : (prt == 4 ? "por três quartos" : "por quatro quintos"))) + ". Você aceita essa nova contra-oferta?");
-                                                                    string opt7 = OptRead("Faça sua escolha").ToLower();
+                                                                    string opt7 = BWrite("Faça sua escolha").ToLower();
                                                                     if (new[] { "sim", "s", "yes", "y" }.Contains(opt7))
                                                                     {
                                                                         Console.WriteLine("Relutantemente você aceita a oferta dele, discretamente passando a jóia para o trabalhador, que lhe passa uma parte do dinheiro.");
@@ -646,28 +533,28 @@ public class CityController
                                                                     }
                                                                     else if (new[] { "não", "nao", "no", "n" }.Contains(opt7))
                                                                     {
-                                                                        Console.WriteLine("O trabalhador ficou extremamente irritado com a sua oferta, correndo até os guardas que estavam ali perto, que vão em sua direção, já demandando que lhe mostrem a jóia. Os guardas te revistam, encontrando uma " + gem.Name + ". Os guardas lhe deram uma surra e então o jogaram para fora da mina, nenhum de seus esforços na mina lhe renderam nada.");
-                                                                        MinerFailEvent(hero, rng);
+                                                                        Console.WriteLine("O trabalhador ficou extremamente irritado com a sua oferta, correndo até os guardas que estavam ali perto, que vão em sua direção, já demandando que lhe mostrem a jóia. Os guardas te revistam, encontrando uma " + gem.Name + ". Os guardas lhe deram uma surra e então o jogaram para fora da mina, seus esforços na mina lhe renderam nada.");
+                                                                        MinerFailEvent(rng);
                                                                     }
                                                                 }
                                                                 else
                                                                 {
-                                                                    Console.WriteLine("Você tenta renegociar a partição, mas o trabalhador irritou-se com a sua negação, correndo até os dois guardas que estavam ali perto, que vão em sua direção, já demandando que lhe mostrem a jóia. Os guardas te revistam, encontrando uma " + gem.Name + ". Os guardas lhe deram uma surra e então o jogaram para fora da mina, nenhum de seus esforços na mina lhe renderam nada.");
-                                                                    MinerFailEvent(hero, rng);
+                                                                    Console.WriteLine("Você tenta renegociar a partição, mas o trabalhador irritou-se com a sua negação, correndo até os dois guardas que estavam ali perto, que vão em sua direção, já demandando que lhe mostrem a jóia. Os guardas te revistam, encontrando uma " + gem.Name + ". Os guardas lhe deram uma surra e então o jogaram para fora da mina, seus esforços na mina lhe renderam nada.");
+                                                                    MinerFailEvent(rng);
                                                                     return;
                                                                 }
                                                             }
                                                             else
                                                             {
-                                                                Console.WriteLine("Anters que pudesse falar qualquer coisa, o trabalhador mudou de ideia, correndo até os dois guardas que estavam ali perto, que vão em sua direção, já demandando que lhe mostrem a jóia. Os guardas te revistam, encontrando uma " + gem.Name + ". Os guardas lhe deram uma surra e então o jogaram para fora da mina, nenhum de seus esforços na mina lhe renderam nada.");
-                                                                MinerFailEvent(hero, rng);
+                                                                Console.WriteLine("Anters que pudesse falar qualquer coisa, o trabalhador mudou de ideia, correndo até os dois guardas que estavam ali perto, que vão em sua direção, já demandando que lhe mostrem a jóia. Os guardas te revistam, encontrando uma " + gem.Name + ". Os guardas lhe deram uma surra e então o jogaram para fora da mina, seus esforços na mina lhe renderam nada.");
+                                                                MinerFailEvent(rng);
                                                                 return;
                                                             }
                                                         }
                                                         else
                                                         {
-                                                            Console.WriteLine("O trabalhador não aceitou sua oferta, correndo até os dois guardas que estavam ali perto, que vão em sua direção, já demandando que lhe mostrem a jóia. Os guardas te revistam, encontrando uma " + gem.Name + ". Os guardas lhe deram uma surra e então o jogaram para fora da mina, nenhum de seus esforços na mina lhe renderam nada.");
-                                                            MinerFailEvent(hero, rng);
+                                                            Console.WriteLine("O trabalhador não aceitou sua oferta, correndo até os dois guardas que estavam ali perto, que vão em sua direção, já demandando que lhe mostrem a jóia. Os guardas te revistam, encontrando uma " + gem.Name + ". Os guardas lhe deram uma surra e então o jogaram para fora da mina, seus esforços na mina lhe renderam nada.");
+                                                            MinerFailEvent(rng);
                                                             return;
                                                         }
                                                         break;
@@ -675,15 +562,15 @@ public class CityController
                                                     case "intimidar":
                                                     case "intimidate":
                                                         Console.WriteLine("Você se aproxima do trabalhador, o agarrando pela gola da sua camisa e dizendo que se ele o entregar você vai quebrar suas pernas com a picareta.");
-                                                        if (rng.Next(100) > 70 - hero.Strength)
+                                                        if (rng.Next(100) > 70 - _hero.Hero.Strength)
                                                         {
                                                             Console.WriteLine("O trabalhador hesitou, dizendo que não vai falar nada com nignuém, você o solta, espanando o ombro dele, dizendo para voltar ao trabalho.");
                                                             listGoodsFound.Add(gem);
                                                         }
                                                         else
                                                         {
-                                                            Console.WriteLine("o trabalhador não se assutou facilmente, ele desvencilhou do seu aguarrão com um golpe, correndo até os dois guardas que estavam ali perto, que vão em sua direção, já demandando que lhe mostrem a jóia. Os guardas te revistam, encontrando uma " + gem.Name + ". Os guardas lhe deram uma surra e então o jogaram para fora da mina, nenhum de seus esforços na mina lhe renderam nada.");
-                                                            MinerFailEvent(hero, rng);
+                                                            Console.WriteLine("o trabalhador não se assutou facilmente, ele desvencilhou do seu aguarrão com um golpe, correndo até os dois guardas que estavam ali perto, que vão em sua direção, já demandando que lhe mostrem a jóia. Os guardas te revistam, encontrando uma " + gem.Name + ". Os guardas lhe deram uma surra e então o jogaram para fora da mina, seus esforços na mina lhe renderam nada.");
+                                                            MinerFailEvent(rng);
                                                             return;
                                                         }
                                                         break;
@@ -691,15 +578,15 @@ public class CityController
                                                     case "esconder":
                                                     case "hide":
                                                         Console.WriteLine("Antes que o trabalhador alcança-se os guardas, você teve a ideia de esconder a jóia na terra.");
-                                                        if (rng.Next(100) > 70 - (hero.Agility * 2))
+                                                        if (rng.Next(100) > 70 - (_hero.Hero.Agility * 2))
                                                         {
-                                                            Console.WriteLine("Rapidamente colocou a pedra no chão e a cobriu com pouco de terra, apalpando com o pé, não dava para perceber que havia algo ali. Quando os guardas chegaram ali, te revistaram, mas não encontraram nada, punindo o trabalhador por contar mentira. Enquanto os guardas o levaram para fora, você recuperou a pedra, sem ninguém próximo para lhe dedurar.");
+                                                            Console.WriteLine("Rapidamente colocou a pedra no chão e a cobriu com pouco de terra, apalpando com o pé, não dava para perceber que havia algo ali. Quando os guardas chegaram ali, te revistaram, mas não encontraram nada, punindo o trabalhador por mentir. Enquanto os guardas o levaram para fora, você recuperou a pedra, sem ninguém próximo para lhe dedurar.");
                                                             listGoodsFound.Add(gem);
                                                         }
                                                         else
                                                         {
                                                             Console.WriteLine("Infelizmente você não foi rápido suficiente, os guardas lhe pegaram tentando esconder a jóia no chão, que imediantemente lhe pegaram e o jogaram para fora da mina, nenhum de seus esforços na mina lhe renderam nada.");
-                                                            MinerFailEvent(hero, rng);
+                                                            MinerFailEvent(rng);
                                                             return;
                                                         }
                                                         break;
@@ -707,14 +594,14 @@ public class CityController
                                                     case "nada":
                                                     case "nothing":
                                                         Console.Write("Você descide não fazer nada, contiua trabalhando, como se não tivesse acontecido nada. Quando o trabalhador chegou com uma dupla de guardas, ");
-                                                        if (rng.Next(100) > 90 - hero.Luck)
+                                                        if (rng.Next(100) > 90 - _hero.Hero.Luck)
                                                         {
                                                             Console.WriteLine("ele não soube dizer quem estava com a pedra ou não, os guardas o puniram por mentir, o jogando para fora da mina");
                                                             listGoodsFound.Add(gem);
                                                         }
                                                         else
                                                         {
-                                                            Console.WriteLine("o trabalhador apontou o dedo para você, os guardas interromperam o que estava fazendo, revistando-o, encontrando a jóia que havia escavado. Eles o jogaram para fora da mina, todos seus esforços não serviram para nada");
+                                                            Console.WriteLine("o trabalhador apontou o dedo para você, os guardas interromperam o que estava fazendo, revistando-o, encontrando a jóia que havia escavado. Eles o jogaram para fora da mina, seus esforços não serviram para nada");
                                                         }
                                                         break;
                                                     default:
@@ -726,8 +613,8 @@ public class CityController
                                         }
                                         else
                                         {
-                                            Console.WriteLine("imediatamente foi ao encontro dos guardas. Uma dupla deles lhe confrontou, obrigando-o a esvaziar o seus bolsos, eventualmente encontrando a tal jóia. Os guardas lhe deram uma surra e então o jogaram para fora da mina, nenhum de seus esforços na mina lhe renderam nada.");
-                                            MinerFailEvent(hero, rng);
+                                            Console.WriteLine("imediatamente foi ao encontro dos guardas. Uma dupla deles lhe confrontou, obrigando-o a esvaziar o seus bolsos, eventualmente encontrando a tal jóia. Os guardas lhe deram uma surra e então o jogaram para fora da mina, seus esforços na mina lhe renderam nada.");
+                                            MinerFailEvent(rng);
                                             return;
                                         }
                                     }
@@ -737,7 +624,7 @@ public class CityController
                             break;
                         case 2:
                             Console.Write("Enquanto você e outros mineradores cavavam em uma sessão de um túnel, uma viga de sustento se partiu, fazendo com que uma parte da mina colapsar.");
-                            int escapeChance = rng.Next(100) + (hero.Perception + hero.Agility);
+                            int escapeChance = rng.Next(100) + (_hero.Hero.Perception + _hero.Hero.Agility);
                             if (escapeChance >= 50)
                             {
                                 Console.Write(" Pela sua habilidade, você conseguiu escapar ileso das rochas que deslizaram do teto.");
@@ -745,17 +632,17 @@ public class CityController
                             else if (escapeChance >= 20 && escapeChance < 50)
                             {
                                 Console.Write(" Por pouco você é não pego pelas rochas, uma delas te pegou de raspão, deixando um pouco de sangue escorrer.");
-                                hero.Hitpoints -= rng.Next(1, 5);
+                                _hero.Hero.Hitpoints -= rng.Next(1, 5);
                             }
                             else if (escapeChance < 20)
                             {
                                 Console.Write(" Você não foi ágil suficiente para escapar das rochas, sendo pego pelo deslizamento. Com dificuldade, você se rasteja para sua liberdade.");
-                                hero.Hitpoints -= rng.Next(15, 25);
+                                _hero.Hero.Hitpoints -= rng.Next(15, 25);
                             }
                             Console.WriteLine(" Olhando para trás, você vê que um dos trabalhadores ficou preso no deslizaemento, sem que houvesse um modo dele se soltar sozinho. Ele grita por socorro.");
-                            bool beanIsFirm = (rng.Next(100) > 70 - (hero.Luck * 2)) ? true : false;
-                            bool rockIsLiftable = (rng.Next(100) > 70 - (hero.Luck * 2)) ? true : false;
-                            int time = rng.Next(4) + hero.Luck / 10;
+                            bool beanIsFirm = (rng.Next(100) > 70 - (_hero.Hero.Luck * 2)) ? true : false;
+                            bool rockIsLiftable = (rng.Next(100) > 70 - (_hero.Hero.Luck * 2)) ? true : false;
+                            int time = rng.Next(4) + _hero.Hero.Luck / 10;
                             while (time > 1)
                             {
                                 Console.WriteLine("O que você faz?");
@@ -767,7 +654,7 @@ public class CityController
                                 Console.WriteLine("6: Não fazer nada.");
                                 while (true)
                                 {
-                                    string opt2 = OptRead("Faça sua escolha.");
+                                    string opt2 = BWrite("Faça sua escolha.");
                                     switch (opt2)
                                     {
                                         case "1":
@@ -778,10 +665,10 @@ public class CityController
                                             Console.WriteLine("2: Levantar a rocha.");
                                             while (true)
                                             {
-                                                string opt3 = OptRead("Faça sua escolha.").ToLower();
+                                                string opt3 = BWrite("Faça sua escolha.").ToLower();
                                                 if (new[] { "1", "pull", "puxar" }.Contains(opt3))
                                                 {
-                                                    if (rng.Next(100) > 70 - hero.Strength - (rockIsLiftable ? 30 : 0))
+                                                    if (rng.Next(100) > 70 - _hero.Hero.Strength - (rockIsLiftable ? 30 : 0))
                                                     {
                                                         Console.WriteLine("");
                                                     }
@@ -792,7 +679,7 @@ public class CityController
                                                 }
                                                 else if (new[] { "2", "lift", "levantar" }.Contains(opt3))
                                                 {
-                                                    if (rng.Next(100) > 70 - hero.Strength - (rockIsLiftable ? 30 : 0))
+                                                    if (rng.Next(100) > 70 - _hero.Hero.Strength - (rockIsLiftable ? 30 : 0))
                                                     {
                                                         Console.WriteLine("Você conseguiu levantar a rocha");
                                                     }
@@ -861,12 +748,13 @@ public class CityController
         }
     }
 
-    public void MinerFailEvent(Hero hero, Random rng)
+    public void MinerFailEvent(Random rng)
     {
-        hero.Hitpoints -= rng.Next(hero.TotalHitPoints() / 10);
-        hero.Hitpoints = hero.Hitpoints < 1 ? 1 : hero.Hitpoints;
-        hero.Reputation -= 10;
+        _hero.Hero.Hitpoints -= rng.Next(_hero.Hero.TotalHitPoints() / 10);
+        _hero.Hero.Hitpoints = _hero.Hero.Hitpoints < 1 ? 1 : _hero.Hero.Hitpoints;
+        _hero.Hero.Reputation -= 10;
     }
+
     public void MinerRockFallTime(int time)
     {
         if (time >= 5)

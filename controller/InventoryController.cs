@@ -1,141 +1,77 @@
-using static BaseController;
-using LiteDB;
+using static BaseService;
 #pragma warning disable 8600, 8602, 8603, 8604
 public class InventoryController
 {
     // private List<Item> inventory = new List<Item>();
     // private Value vault = new Value(0, 0, 0, 0);
-    private int _ownerId;
-    public InventoryController(int id)
+
+    private ItemService _inventoryService;
+    private EquipController _equipController;
+
+    public ItemService Inventory { get => _inventoryService; }
+
+    private int _owner;
+
+    public InventoryController(LiteDB.LiteDatabase db, int owner, Equip equip)
     {
-        _ownerId = id;
+        _owner = owner;
+        _inventoryService = new ItemService(db, owner);
+        _equipController = new EquipController(db, equip);
     }
 
-    public void PrintInv()
+    public double TotalCarringWeight()
     {
-        var db = new LiteDatabase("data.db");
-        List<Item> inventory = db.GetCollection<Item>(INVENTORY).Query().Where(x => x.ownerId.Equals(_ownerId) & x.Qtd > 0).ToList();
-        foreach (Item item in inventory)
-        {
-            Console.WriteLine(item.ToString());
-        }
-        db.Dispose();
+        double totalCarry = 0.0;
+        List<Item> inv = _inventoryService.GetInv();
+        foreach (Item item in inv)
+            totalCarry += item.Weight;
+        return totalCarry;
     }
-    public List<Item> GetInv()
-    {
-        var db = new LiteDatabase("data.db");
-        List<Item> inventory = db.GetCollection<Item>(INVENTORY).Query().Where(x => x.ownerId.Equals(_ownerId) & x.Qtd > 0).ToList();
-        db.Dispose();
-        return inventory;
-    }
-    public bool Empty()
-    {
-        var db = new LiteDatabase("data.db");
-        List<Item> inventory = db.GetCollection<Item>(INVENTORY).Query().Where(x => x.ownerId.Equals(_ownerId) & x.Qtd > 0).ToList();
-        bool isEmpty = inventory.Count == 0 ? true : false;
-        db.Dispose();
-        return isEmpty;
-    }
+
+    public Item GetItemById(int itemId){
+        return Inventory.GetItemById(itemId);
+        
+    } 
+
     public void AddItem(Item item)
     {
-        var db = new LiteDatabase("data.db");
-        var inv = db.GetCollection<Item>(INVENTORY);
+        Item itemFound;
         try
         {
-            Item itemFound = inv.Query().Where(x => x.Name.Equals(item.Name)).First();
-            if (itemFound.Equals(item))
-            {
-                itemFound.Qtd += item.Qtd;
-                itemFound.Value += item.Value;
-                itemFound.Weight += item.Weight;
-                inv.Update(itemFound);
-            }
-            else
-            {
-                inv.Insert(item);
-            }
+            itemFound = _inventoryService.GetItem(item);
+            item.owner = _owner;
+            itemFound.Qtd += item.Qtd;
+            itemFound.Value += item.Value;
+            itemFound.Weight += item.Weight;
+            _inventoryService.put(itemFound);
         }
-        catch (System.InvalidOperationException)
+        catch (InvalidOperationException)
         {
-            inv.Insert(item);
-        }
-        /* if (inventory.Contains(item))
-            inventory[item.Id].Qtd += item.Qtd;
-        else
-            inventory.Add(item); */
-        db.Dispose();
-    }
-    public void DeleteItem(int id)
-    {
-        var db = new LiteDatabase("data.db");
-        var inv = db.GetCollection<Item>(INVENTORY);
-        inv.Delete(id);
-        db.Dispose();
-    }
-    public Item GetItem(int id)
-    {
-        var db = new LiteDatabase("data.db");
-        var inv = db.GetCollection<Item>(INVENTORY);
-        try
-        {
-            Item item = inv.Query().Where(x => x.Id.Equals(id)).First();
-            db.Dispose();
-            return item;
-        }
-        catch (System.InvalidOperationException)
-        {
-            Console.WriteLine("Item não encontrado");
-            db.Dispose();
-            return null;
+            _inventoryService.put(item);
         }
     }
+
     public void DropItem(Item item, int qtd, Equip equip)
     {
-        var db = new LiteDatabase("data.db");
-        var col = db.GetCollection<Item>(BaseController.INVENTORY);
         if (item.IsEquipable)
         {
             if (item.Qtd > qtd)
             {
                 item.Qtd -= qtd;
-                col.Update(item);
+                _inventoryService.put(item);
             }
             else if (item.Qtd <= qtd)
             {
-                int slotId = 0;
-                if (new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 }.Contains((int)item.ItemType))
-                {
-                    slotId = EquipController.GetEquipSlot((int)item.ItemType, equip);
-                }
-                else if ((int)item.ItemType == 11)
-                {
-                    slotId = EquipController.GetEquipSlot(10, equip);
-                    if (slotId == 0 || slotId != item.Id)
-                    {
-                        slotId = EquipController.GetEquipSlot(11, equip);
-                    }
-                }
-                else if ((int)item.ItemType == 12)
-                {
-                    slotId = EquipController.GetEquipSlot(12, equip);
-                }
-                else if (((int)item.ItemType > 20 && (int)item.ItemType < 50) || (int)item.ItemType == 13)
-                {
-                    slotId = EquipController.GetEquipSlot(13, equip);
-                    if (slotId == 0 || slotId != item.Id)
-                    {
-                        slotId = EquipController.GetEquipSlot(14, equip);
-                    }
-                }
+                int slot = _equipController.GetEquipSlot((int)item.ItemType);
 
-                if (slotId == 0 || slotId != item.Id)
+                if (slot == 0 || slot != item.Id)
                 {
-                    col.Delete(item.Id);
+                    _inventoryService.DeleteItem(item.Id);
                 }
                 else
                 {
                     item.Qtd = 0;
-                    col.Update(item);
+                    _inventoryService.put(item);
                 }
             }
         }
@@ -144,24 +80,23 @@ public class InventoryController
             if (item.Qtd > qtd)
             {
                 item.Qtd -= qtd;
-                col.Update(item);
+                _inventoryService.put(item);
             }
             else if (item.Qtd <= qtd)
             {
-                col.Delete(item.Id);
+                _inventoryService.DeleteItem(item.Id);
             }
         }
-        db.Dispose();
     }
 
-    public static Item GerarItem(int ownerId, int lMin, int lMax, int rarityMod, int qualityMod, int choosenItem = 0)
+    public static Item GerarItem(int owner, int lMin, int lMax, int rarityMod, int qualityMod, int choosenItem = 0)
     {
         Item item = new Item();
-        item.ownerId = ownerId;
+        item.owner = owner;
 
         Random rng = new Random();
 
-        item.Level = rng.Next(lMin < 1 ? 1 : lMin, lMax > Hero.LEVELCAP ? Hero.LEVELCAP : lMax);
+        item.Level = rng.Next(lMin < 1 ? 1 : lMin, lMax > LEVELCAP ? LEVELCAP : lMax);
         // Console.Write("Entre(" + (lMin < 1 ? 1 : lMin) + "," + (lMax > Hero.LEVELCAP ? Hero.LEVELCAP : lMax) + ") lvl" + item.Level);
         item.Rarity = rng.Next(0, rarityMod);
         item.Quality = rng.Next(0, qualityMod);
@@ -375,13 +310,13 @@ public class InventoryController
     {
         Random rng = new Random();
         int et = Enum.GetValues(t).Length - 1;
-        double d = (((level * et) + rng.Next((int)(rarity + quality) / 2)) / (Hero.LEVELCAP)) * 1.5;
+        double d = (((level * et) + rng.Next((int)(rarity + quality) / 2)) / (LEVELCAP)) * 1.5;
         int n = (int)(Math.Floor(d > et ? et : (d < 0 ? 0 : d)));
         level = (int)Math.Pow(level, levelrates);
         rarity = (int)Math.Pow(rarity, rarityRates);
         quality = (int)Math.Pow(quality, qualityRates);
-        int cap = (int)Math.Pow(Hero.LEVELCAP, 3 * capRates);
-        int chance = cap - Hero.LEVELCAP;
+        int cap = (int)Math.Pow(LEVELCAP, 3 * capRates);
+        int chance = cap - LEVELCAP;
         double capRed = Math.Pow(cap - 1000, 1 / et);
         double chanceRed = Math.Pow(chance - 100, 1 / et);
         return rng.Next(cap) > chance - (level * rarity * quality) ? n : MLTHelper(rng, level, rarity, quality, (int)(cap / capRed), (int)(chance / chanceRed), n - 1, capRed, chanceRed);
