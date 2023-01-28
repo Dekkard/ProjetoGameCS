@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<flow>
+    <type>Work</type>
+    <subtype>Mine</subtype>
+    <properties>
+        <city></city>
+    </properties>
+    <description>As minas abertas aos arredores da {{city}} contribuem para o fornecimento de alguns metais e carvão para região. Trabalhar aqui exigirá muito do seu físico, a cada golpe de sua ferramenta irá drenar suas energias com grande facilidade se não o fizer com cuidado, porém, seus esforçor podem lhe render um bom dinheiro se o fizer corretamente.</description>
+    <eventflows>
+        <event>
+            <description>Deseja continuar?</description>
+            <options>
+                <option>
+                    <description>Sim</description>
+                    <input list="sim,yes,s,y" />
+                    <event>
+                        <createItem type="MaterialGem" />
+                        <description>Durante suas minerações você encontra uma {{item}}. Como foi lhe dito no começo da sua empreitada, tudo e qualquer coisa que for encontrada na mina é de propriedade de {{city}}, então, naturalmente, você deve entregar a jóia para os guardas. Entretanto, ninguém percebeu que você encontrou uma {{item}}, se você conseguir oculta-lá e sair dali é possível fazer um bom dinheiro com ela, apesar de o correto ser entrega-lá para os proprietários, apesar de sua recompensa ser bem menor que o valor da jóia. Qual a sua decisão?</description>
+                        <options>
+                            <option>
+                                <description>Entregar</description>
+                                <input list="entregar,deliver" />
+                                <event>
+                                    <description>Você decide que o correto é entregar a jóia para as autoridades, outros usos podem ser feitos com a pedra do que seus próprios ganhos pessoais. Ao entregar para o chefe da mina, ele lhe agradece e lhe entrega uma quantia do dinheiro.</description>
+                                    <reward gain="item.value" fold="0.2" />
+                                </event>
+                            </option>
+                            <option>
+                                <description>Ficar</description>
+                                <input list="ficar,keep" />
+                                <event>
+                                    <description>Você decide ficar com a {{item}}. Você olha para o lados, certificando se alguém está olhando, e coloca jóia no seu bolso...</description>
+                                    <event>
+                                        <roll rng="100" hit="60" status="agility,perception">
+                                            <success>
+                                                <description>.. e niguém se quer percebeu o que você
+                                                    fez.</description>
+                                                <reward gain="item" />
+                                            </success>
+                                            <failure>
+                                                <description>... um dos trabalhadores notou algo
+                                                    brilhante em suas mãos,</description>
+                                                <event>
+                                                    <roll rng="100" hit="70" status="perception">
+                                                        <success>
+                                                            <description>você percebeu suas intenções, e antes que ele pudesse avisar alguém, você o abordou.</description>
+                                                            <options>
+                                                                <option>
+                                                                    <description>Raciocinar</description>
+                                                                    <input list="raciocinar,reason" />
+                                                                    <event>
+                                                                        <description>Você se aproxima do trabalhador, tenta convencer ele de que a jóia já era sua, e só tinha pegado ela lhe dar sorte.</description>
+                                                                        <event>
+                                                                            <roll rng="100" hit="80" status="persuasion">
+                                                                                <success>
+                                                                                    <description>Ele acreditou, dizendo que achava ter visto você encontrando a pedra. Ele se desculpa, você diz que está tudo bem, os dois voltam para o que estavam fazendo.</description>
+                                                                                    <reward gain="item"/>
+                                                                                </success>
+                                                                                <fail>
+                                                                                    <description>Ele não acredita nessa mentira, correndo até os dois guardas que estavam ali perto, que vão em sua direção, já demandando que lhe mostrem a jóia. Os guardas te revistam, encontrando uma " + gem.Name + ". Os guardas lhe deram uma surra e então o jogaram para fora da mina, seus esforços na mina lhe renderam nada.</description>
+                                                                                    <exit reward="forfeit"/>
+                                                                                </fail>
+                                                                            </roll>
+                                                                        </event>
+                                                                    </event>
+                                                                </option>
+                                                                <option>
+                                                                    <description>Negociar</description>
+                                                                    <input list="negociar,negotiate" />
+                                                                    <event>
+                                                                        <roll rng="100" hit="80" status="persuasion">
+                                                                            <success>
+                                                                                <description>Ele acreditou, dizendo que achava ter visto você encontrando a pedra. Ele se desculpa, você diz que está tudo bem, os dois voltam para o que estavam fazendo.</description>
+                                                                                <reward gain="item"/>
+                                                                            </success>
+                                                                            <fail>
+                                                                                <description>Ele não acredita nessa mentira, correndo até os dois guardas que estavam ali perto, que vão em sua direção, já demandando que lhe mostrem a jóia. Os guardas te revistam, encontrando uma " + gem.Name + ". Os guardas lhe deram uma surra e então o jogaram para fora da mina, seus esforços na mina lhe renderam nada.</description>
+                                                                                <exit reward="forfeit"/>
+                                                                            </fail>
+                                                                        </roll>
+                                                                    </event>
+                                                                </option>
+                                                                <option>
+                                                                    <description>Intimidar</description>
+                                                                    <input
+                                                                        list="intimidar,intimidate" />
+                                                                    <event>
+                                                                        <roll rng="100" hit="80" status="persuasion">
+                                                                            <success>
+                                                                                <description>Ele acreditou, dizendo que achava ter visto você encontrando a pedra. Ele se desculpa, você diz que está tudo bem, os dois voltam para o que estavam fazendo.</description>
+                                                                                <reward gain="item"/>
+                                                                            </success>
+                                                                            <fail>
+                                                                                <description>Ele não acredita nessa mentira, correndo até os dois guardas que estavam ali perto, que vão em sua direção, já demandando que lhe mostrem a jóia. Os guardas te revistam, encontrando uma " + gem.Name + ". Os guardas lhe deram uma surra e então o jogaram para fora da mina, seus esforços na mina lhe renderam nada.</description>
+                                                                                <exit reward="forfeit"/>
+                                                                            </fail>
+                                                                        </roll>
+                                                                    </event>
+                                                                </option>
+                                                                <option>
+                                                                    <description>Esconder</description>
+                                                                    <input list="esconder,hide" />
+                                                                    <event>
+                                                                        <roll rng="100" hit="80" status="persuasion">
+                                                                            <success>
+                                                                                <description>Ele acreditou, dizendo que achava ter visto você encontrando a pedra. Ele se desculpa, você diz que está tudo bem, os dois voltam para o que estavam fazendo.</description>
+                                                                                <reward gain="item"/>
+                                                                            </success>
+                                                                            <fail>
+                                                                                <description>Ele não acredita nessa mentira, correndo até os dois guardas que estavam ali perto, que vão em sua direção, já demandando que lhe mostrem a jóia. Os guardas te revistam, encontrando uma " + gem.Name + ". Os guardas lhe deram uma surra e então o jogaram para fora da mina, seus esforços na mina lhe renderam nada.</description>
+                                                                                <exit reward="forfeit"/>
+                                                                            </fail>
+                                                                        </roll>
+                                                                    </event>
+                                                                </option>
+                                                            </options>
+                                                        </success>
+                                                        <fail></fail>
+                                                    </roll>
+                                                </event>
+                                            </failure>
+                                        </roll>
+                                    </event>
+                                </event>
+                            </option>
+                        </options>
+                    </event>
+                </option>
+                <option>
+                    <description>Não</description>
+                    <input list="não,nao,no,n" />
+                    <event>
+                        <exit/>
+                    </event>
+                </option>
+            </options>
+        </event>
+    </eventflows>
+</flow>
